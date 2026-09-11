@@ -300,15 +300,20 @@ func _make_building(left: bool, slot: int) -> Node3D:
 	return holder
 
 func _random_building_path() -> String:
+	var r: float = rng.randf()
 	if current_map == "tokyo_neon":
-		var r: float = rng.randf()
 		if r < 0.4:
 			return K_GLB + K_SKYSCRAPERS[rng.randi_range(0, K_SKYSCRAPERS.size() - 1)] + ".glb"
 		return K_GLB + K_BUILDINGS[rng.randi_range(0, K_BUILDINGS.size() - 1)] + ".glb"
-	var r2: float = rng.randf()
-	if r2 < 0.52:
+	if current_map == "moscow_frost":
+		if r < 0.5:
+			return K_GLB + K_LOW[rng.randi_range(0, K_LOW.size() - 1)] + ".glb"
+		elif r < 0.85:
+			return K_GLB + K_BUILDINGS[rng.randi_range(0, K_BUILDINGS.size() - 1)] + ".glb"
+		return K_GLB + K_SKYSCRAPERS[rng.randi_range(0, K_SKYSCRAPERS.size() - 1)] + ".glb"
+	if r < 0.52:
 		return K_GLB + K_BUILDINGS[rng.randi_range(0, K_BUILDINGS.size() - 1)] + ".glb"
-	elif r2 < 0.78:
+	elif r < 0.78:
 		return K_GLB + K_SKYSCRAPERS[rng.randi_range(0, K_SKYSCRAPERS.size() - 1)] + ".glb"
 	return K_GLB + K_LOW[rng.randi_range(0, K_LOW.size() - 1)] + ".glb"
 
@@ -316,9 +321,6 @@ func _install_building(holder: Node3D):
 	for c in holder.get_children():
 		c.free()
 	holder.position.y = 0.0
-	if current_map == "moscow_frost":
-		_install_moscow_building(holder)
-		return
 	var ps: PackedScene = load(_random_building_path())
 	var inst := ps.instantiate()
 	holder.add_child(inst)
@@ -330,6 +332,8 @@ func _install_building(holder: Node3D):
 	var target: float = randf_range(12.0, 34.0)
 	if current_map == "tokyo_neon":
 		target = randf_range(22.0, 48.0)
+	elif current_map == "moscow_frost":
+		target = randf_range(8.0, 22.0)
 	var depth: float = randf_range(6.2, 7.2)
 	inst.scale = Vector3(depth, target / base_h, depth)
 	var bb: AABB = Neon.aabb(holder)
@@ -385,45 +389,7 @@ func _make_person(co: Color) -> Node3D:
 		p.add_child(arm)
 	return p
 
-func _install_moscow_building(holder: Node3D):
-	holder.rotation.y = 0.0
-	var w := rng.randi_range(2, 3)
-	var h := rng.randi_range(2, 4)
-	var mm := rng.randf_range(2.6, 4.6)
-	var zrow := rng.randf_range(-1.0, 1.5)
-	var jit := rng.randf_range(0.15, 0.55)
-	for yi in range(h):
-		for xi in range(w):
-			var wall_path: String = RU_GLB + RU_WALLS[rng.randi_range(0, RU_WALLS.size() - 1)] + ".glb"
-			var ps: PackedScene = load(wall_path)
-			if ps == null:
-				continue
-			var inst := ps.instantiate()
-			holder.add_child(inst)
-			Neon.tint_dark(inst, _tint * (1.12 if yi + 1 == h else 1.0))
-			inst.scale = Vector3.ONE * mm
-			inst.position = Vector3((xi - (w - 1) * 0.5) * mm + rng.randf_range(-jit, jit), yi * mm, zrow * mm)
-	var roof_path := RU_GLB + "wall-a-roof.glb"
-	if FileAccess.file_exists(roof_path):
-		var ps2: PackedScene = load(roof_path)
-		if ps2 != null:
-			for xi in range(w):
-				var rf := ps2.instantiate()
-				holder.add_child(rf)
-				Neon.tint_dark(rf, _tint * 1.18)
-				rf.scale = Vector3.ONE * mm
-				rf.position = Vector3((xi - (w - 1) * 0.5) * mm + rng.randf_range(-jit, jit), h * mm, zrow * mm)
-	var bb: AABB = Neon.aabb(holder)
-	holder.position.y = -bb.position.y
-	var max_halfx := 14.5 - 9.8
-	var halfx: float = bb.size.x * 0.5
-	if halfx > max_halfx:
-		holder.scale.x *= max_halfx / halfx
-
 func _vehicle_path() -> String:
-	if current_map == "moscow_frost":
-		var t := ["truck-green", "truck-grey", "truck-green-cargo", "truck-grey-cargo"]
-		return RU_GLB + t[rng.randi_range(0, t.size() - 1)] + ".glb"
 	return K_VEHICLES[rng.randi_range(0, K_VEHICLES.size() - 1)]
 
 func _rebuild_vehicle(v: Node3D):
@@ -459,8 +425,6 @@ func _build_cars():
 		v.set_meta("slot", i)
 		var bx: float = rng.randf_range(-3.4, 3.4)
 		var by: float = rng.randf_range(6.0, 11.0)
-		if current_map == "moscow_frost":
-			by = rng.randf_range(0.6, 0.95)
 		var ph: float = rng.randf() * TAU
 		v.set_meta("_bx", bx)
 		v.set_meta("_by", by)
@@ -510,7 +474,7 @@ func _build_props():
 	for p in _props:
 		p.free()
 	_props.clear()
-	var missions := {"neon_city": 22, "tokyo_neon": 36, "moscow_frost": 26}
+	var missions := {"neon_city": 22, "tokyo_neon": 28, "moscow_frost": 24}
 	var count: int = missions.get(current_map, 22)
 	for i in range(count):
 		var prop := Node3D.new()
@@ -536,58 +500,48 @@ func _make_prop(prop: Node3D):
 		_prop_neon(prop)
 
 func _prop_moscow(prop: Node3D):
-	var side: float = signf(prop.position.x)
 	var kind: float = rng.randf()
 	if kind < 0.3:
 		var inst := _add_glb(prop, RU_GLB + "detail-light-single.glb", randf_range(4.0, 5.2),
 			Vector3.ZERO, rng.randf() * TAU)
 		if inst != null:
 			var lamp := OmniLight3D.new()
-			lamp.light_color = Color(1.0, 0.86, 0.6)
+			lamp.light_color = Color(1.0, 0.9, 0.72)
 			lamp.light_energy = 2.4
 			lamp.omni_range = 8.0
 			lamp.omni_attenuation = 1.7
 			inst.add_child(lamp)
 			lamp.position = Vector3(0.0, 3.4, 0.0)
-	elif kind < 0.55:
+	elif kind < 0.58:
 		var t := "tree-pine-large" if rng.randf() < 0.6 else "tree-pine-small"
 		var tr := _add_glb(prop, RU_GLB + t + ".glb", randf_range(1.5, 2.2), Vector3.ZERO, rng.randf() * TAU)
 		if tr != null:
 			Neon.tint_dark(tr, Color(1.35, 1.4, 1.55))
-	elif kind < 0.68:
+	elif kind < 0.72:
 		_add_glb(prop, RU_GLB + "tree-park-large.glb", randf_range(1.3, 1.8), Vector3.ZERO, rng.randf() * TAU)
-	elif kind < 0.85:
-		var misc := ["detail-bench", "detail-dumpster-closed", "detail-barrier-type-a", "detail-bricks-type-a"]
-		var m := _add_glb(prop, RU_GLB + misc[rng.randi_range(0, misc.size() - 1)] + ".glb",
-			randf_range(1.1, 1.6), Vector3.ZERO, rng.randf() * TAU)
-		if m != null:
-			Neon.tint_dark(m, Color(1.15, 1.2, 1.35))
 	else:
-		_add_glb(prop, RU_GLB + "detail-cables-type-a.glb", randf_range(2.0, 3.0),
-			Vector3(side * 1.6, 2.6, 0.0), 0.0)
+		_add_glb(prop, RU_GLB + "detail-bench.glb", randf_range(1.1, 1.5), Vector3.ZERO, rng.randf() * TAU)
 
 func _prop_tokyo(prop: Node3D):
 	var side: float = signf(prop.position.x)
 	var kind: float = rng.randf()
-	if kind < 0.38:
-		var cy := ["ctQ5CDmraQ", "J3AJSwqmBJ", "s0rwPHWMpY"]
-		var pth: String = CYBER_GLB + cy[rng.randi_range(0, cy.size() - 1)] + ".glb"
-		var plat := _add_glb(prop, pth, randf_range(48.0, 62.0),
-			Vector3(side * 1.9, randf_range(2.9, 3.8), 0.0), rng.randf() * TAU)
-		if plat != null:
-			Neon.tint_dark(plat, Color(1.3, 1.0, 1.6))
-	elif kind < 0.72:
-		var sign := _add_glb(prop, CYBER_SIGN, randf_range(120.0, 180.0),
-			Vector3(side * 0.3, randf_range(1.4, 2.4), 0.0), rng.randf() * 0.5 - 0.25)
-		if sign != null and rng.randf() < 0.4:
-			_add_glb(prop, CYBER_SIGN, randf_range(90.0, 130.0),
-				Vector3(side * 0.3, randf_range(2.5, 3.4), 0.15), rng.randf() * 0.5 - 0.25)
-	else:
+	if kind < 0.5:
+		var pole := _box(prop, Vector3(0.14, randf_range(2.6, 3.4), 0.14),
+			_mat(Color(0.05, 0.0, 0.08), Color(1.0, 0.25, 0.95), 1.8), Vector3.ZERO)
+		var sign := _add_glb(prop, CYBER_SIGN, 150.0,
+			Vector3(0.0, randf_range(2.0, 2.6), 0.0), 0.0)
+		if sign != null:
+			sign.rotation.y = side * 0.5
+	elif kind < 0.75:
 		var d: String = "detail-parasol-" + ("a" if rng.randf() < 0.5 else "b")
 		prop.position.x = side * randf_range(8.1, 8.6)
 		var pl := _add_glb(prop, K_GLB + d + ".glb", randf_range(5.5, 7.0), Vector3.ZERO, rng.randf() * TAU)
 		if pl != null:
 			Neon.tint_dark(pl, Color(1.4, 0.9, 1.7))
+	else:
+		var col := _box(prop, Vector3(0.34, randf_range(2.4, 3.2), 0.34),
+			_mat(Color(0.08, 0.0, 0.12), Color(0.95, 0.3, 1.0), 2.4), Vector3.ZERO)
+		_box(prop, Vector3(0.55, 0.45, 0.55), mat_band, Vector3(0.0, randf_range(1.8, 2.4), 0.0))
 
 func _prop_neon(prop: Node3D):
 	var side: float = signf(prop.position.x)

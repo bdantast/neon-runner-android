@@ -15,7 +15,7 @@ mediante atribuição (ou livre, no caso de CC0). Esta lista deve ser mantida at
 - **Pasta:** `assets/kenney_retro-urban-kit/Models/GLB format/`
 - **Licença:** Creative Commons Zero (CC0) — uso livre para fins comerciais.
   Atribuição sugerida (opcional): "Kenney - www.kenney.nl"
-- **Uso:** mapa Moscow Frost (edifícios-slab, postes de luz, pinheiros, caminhões, bancos, lixeiras, barreiras).
+- **Uso:** decoração do mapa Moscow Frost (postes de luz, pinheiros nevados, bancos).
 - **Arquivo de licença:** `assets/kenney_retro-urban-kit/License.txt`
 
 ## Ultimate Modular Men Pack
