@@ -1,0 +1,11 @@
+# Godot 4
+.godot/
+*.uid
+
+# Android build outputs
+/build/
+/android/
+/local.properties
+*.local
+
+# Export templates (keep the source template, but not build artifacts)
