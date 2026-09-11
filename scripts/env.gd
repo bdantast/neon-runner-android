@@ -45,14 +45,14 @@ func apply_theme(id: String):
 		return
 	match id:
 		"tokyo_neon":
-			_sky_mat.sky_top_color = Color(0.04, 0.0, 0.07)
-			_sky_mat.sky_horizon_color = Color(0.52, 0.06, 0.42)
-			_sky_mat.ground_horizon_color = Color(0.22, 0.03, 0.2)
-			_sky_mat.energy_multiplier = 1.05
-			_env.ambient_light_energy = 1.75
-			_env.glow_intensity = 1.35
-			_env.glow_strength = 1.6
-			_env.fog_light_color = Color(0.4, 0.08, 0.38)
+			_sky_mat.sky_top_color = Color(0.02, 0.0, 0.05)
+			_sky_mat.sky_horizon_color = Color(0.4, 0.1, 0.42)
+			_sky_mat.ground_horizon_color = Color(0.16, 0.04, 0.22)
+			_sky_mat.energy_multiplier = 1.0
+			_env.ambient_light_energy = 1.6
+			_env.glow_intensity = 1.15
+			_env.glow_strength = 1.4
+			_env.fog_light_color = Color(0.3, 0.06, 0.32)
 		"moscow_frost":
 			_sky_mat.sky_top_color = Color(0.01, 0.02, 0.06)
 			_sky_mat.sky_horizon_color = Color(0.5, 0.6, 0.8)

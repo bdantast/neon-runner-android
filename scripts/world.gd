@@ -9,10 +9,8 @@ var _buildings_l: Array[Node3D] = []
 var _buildings_r: Array[Node3D] = []
 var _people: Array[Node3D] = []
 var _cars: Array[Node3D] = []
-var _tron_walls: Array[Node3D] = []
 var _snow_node: GPUParticles3D
 var _props: Array[Node3D] = []
-var _arches: Array[Node3D] = []
 
 const K_GLB := "res://assets/kenney_city-kit-commercial_2.1/Models/GLB format/"
 const K_BUILDINGS := ["building-a", "building-b", "building-c", "building-d", "building-e",
@@ -30,14 +28,9 @@ const K_VEHICLES := ["res://assets/Spaceship by Quaternius - u105mYHLHU.glb",
 	"res://assets/x-wing by Alberto Calvo - d6Xadlg51aC.glb",
 	"res://assets/Spaceship by Quaternius - uCeLfsdmNP.glb",
 	"res://assets/Drone by NateGazzard - DNbUoMtG3H.glb"]
-const TRON_PATH := "res://assets/troncityscape1 #FV7 by Fragmastre TV - 4o0bLgk8mhD.glb"
 const RU_GLB := "res://assets/kenney_retro-urban-kit/Models/GLB format/"
-const CYBER_GLB := "res://assets/Cyberpunk Platform by Quaternius - "
-const CYBER_SIGN := "res://assets/Cyberpunk Signs by Quaternius - rsZJjigt1X.glb"
 const K_DETAIL := ["detail-awning", "detail-awning-wide", "detail-overhang",
 	"detail-overhang-wide", "detail-parasol-a", "detail-parasol-b"]
-const RU_WALLS := ["wall-a", "wall-a-window", "wall-a-flat", "wall-a-detail",
-	"wall-a-door", "wall-a-garage", "wall-b", "wall-b-window", "wall-b-flat", "wall-type-a"]
 
 const BUILD_LEFT_X := -14.5
 const BUILD_RIGHT_X := 14.5
@@ -48,7 +41,6 @@ const BUILD_COUNT := 42
 const DASH_SPACING := 5.0
 const DASH_COUNT := 18
 const SIDEWALK_X := 7.7
-const TRON_WALL_X := 132.0
 
 var mat_road: StandardMaterial3D
 var mat_curb: StandardMaterial3D
@@ -77,7 +69,6 @@ var _band_en := 1.4
 var _people_palette: Array = [Color(0.2, 0.1, 0.3), Color(0.15, 0.0, 0.25), Color(0.05, 0.15, 0.3), Color(0.25, 0.05, 0.2)]
 var _veh_glow := Color(0.3, 0.9, 1.0)
 var _veh_lamp := Color(0.4, 0.9, 1.0)
-var _use_tron := false
 var _use_snow := false
 
 func _ready():
@@ -90,33 +81,31 @@ func _ready():
 	_build_buildings()
 	_build_people()
 	_build_cars()
-	_build_arches()
 	_build_props()
 
 func _apply_theme():
 	match current_map:
 		"tokyo_neon":
-			_tint = Color(1.25, 1.0, 1.5)
-			_road_a = Color(0.45, 0.18, 0.5)
-			_curb_a = Color(0.3, 0.0, 0.26)
-			_curb_e = Color(1.0, 0.2, 0.85)
-			_curb_en = 1.4
-			_div_a = Color(0.32, 0.0, 0.22)
-			_div_e = Color(1.0, 0.3, 0.95)
-			_div_en = 1.9
+			_tint = Color(1.2, 1.05, 1.35)
+			_road_a = Color(0.6, 0.45, 0.8)
+			_curb_a = Color(0.28, 0.1, 0.42)
+			_curb_e = Color(0.3, 0.95, 1.0)
+			_curb_en = 1.2
+			_div_a = Color(0.24, 0.08, 0.38)
+			_div_e = Color(0.4, 0.9, 1.0)
+			_div_en = 1.5
 			_rail_a = Color(0.06, 0.01, 0.09)
-			_rail_e = Color(0.9, 0.2, 1.0)
-			_rail_en = 1.3
-			_roof_a = Color(0.42, 0.0, 0.32)
-			_roof_e = Color(1.0, 0.2, 0.8)
-			_roof_en = 2.7
-			_band_a = Color(0.2, 0.0, 0.22)
-			_band_e = Color(0.4, 0.9, 1.0)
-			_band_en = 1.6
-			_people_palette = [Color(0.4, 0.1, 0.35), Color(0.9, 0.3, 0.6), Color(0.2, 0.35, 0.45), Color(0.5, 0.15, 0.3)]
-			_veh_glow = Color(1.0, 0.35, 0.8)
-			_veh_lamp = Color(1.0, 0.45, 0.9)
-			_use_tron = true
+			_rail_e = Color(1.0, 0.4, 1.0)
+			_rail_en = 1.2
+			_roof_a = Color(0.4, 0.06, 0.34)
+			_roof_e = Color(1.0, 0.45, 0.95)
+			_roof_en = 2.2
+			_band_a = Color(0.1, 0.18, 0.32)
+			_band_e = Color(0.35, 0.95, 1.0)
+			_band_en = 1.5
+			_people_palette = [Color(0.15, 0.2, 0.4), Color(0.35, 0.1, 0.45), Color(0.1, 0.3, 0.35), Color(0.45, 0.15, 0.3)]
+			_veh_glow = Color(0.5, 0.6, 1.0)
+			_veh_lamp = Color(0.6, 0.7, 1.0)
 			_use_snow = false
 		"moscow_frost":
 			_tint = Color(1.3, 1.33, 1.65)
@@ -139,7 +128,6 @@ func _apply_theme():
 			_people_palette = [Color(0.1, 0.2, 0.3), Color(0.4, 0.45, 0.6), Color(0.15, 0.25, 0.4), Color(0.3, 0.35, 0.5)]
 			_veh_glow = Color(0.6, 0.9, 1.0)
 			_veh_lamp = Color(0.8, 0.95, 1.0)
-			_use_tron = false
 			_use_snow = true
 		_:
 			_tint = Color(1.1, 1.15, 1.4)
@@ -162,7 +150,6 @@ func _apply_theme():
 			_people_palette = [Color(0.2, 0.1, 0.3), Color(0.15, 0.0, 0.25), Color(0.05, 0.15, 0.3), Color(0.25, 0.05, 0.2)]
 			_veh_glow = Color(0.3, 0.9, 1.0)
 			_veh_lamp = Color(0.4, 0.9, 1.0)
-			_use_tron = false
 			_use_snow = false
 
 func _build_materials():
@@ -352,6 +339,11 @@ func _attach_building_accents(holder: Node3D, bb: AABB):
 		Vector3(0.0, base + h * 0.45, 0.0))
 	if rng.randf() < 0.45:
 		band.position.y = base + h * 0.62
+	if current_map == "tokyo_neon":
+		_box(holder, Vector3(randf_range(3.2, 4.2), h * 0.03, 0.42), mat_curb,
+			Vector3(0.0, base + h * 0.28, 0.0))
+		_box(holder, Vector3(randf_range(5.0, 6.4), h * 0.04, 0.55), mat_roof,
+			Vector3(0.0, base + h * 0.78, 0.0))
 
 func _rand_spawn_z() -> float:
 	return randf_range(-48.0, 25.0)
@@ -451,25 +443,6 @@ func _add_glb(parent: Node3D, path: String, scale: float, pos: Vector3, rot_y :=
 	inst.rotation.y = rot_y
 	return inst
 
-func _build_arches():
-	for a in _arches:
-		a.free()
-	_arches.clear()
-	if current_map != "tokyo_neon":
-		return
-	var n := 7
-	var step := 19.0
-	var start := -84.0
-	for i in range(n):
-		var arch := Node3D.new()
-		arch.position = Vector3(0.0, 0.0, start + i * step)
-		add_child(arch)
-		_box(arch, Vector3(0.42, 5.8, 0.42), mat_rail, Vector3(-6.45, 2.9, 0.0))
-		_box(arch, Vector3(0.42, 5.8, 0.42), mat_rail, Vector3(6.45, 2.9, 0.0))
-		_box(arch, Vector3(13.5, 0.5, 0.5), mat_curb, Vector3(0.0, 5.6, 0.0))
-		_box(arch, Vector3(2.4, 0.65, 0.2), mat_band, Vector3(0.0, 4.75, 0.0))
-		_arches.append(arch)
-
 func _build_props():
 	for p in _props:
 		p.free()
@@ -494,8 +467,6 @@ func _make_prop(prop: Node3D):
 	prop.set_meta("_jz", jz)
 	if current_map == "moscow_frost":
 		_prop_moscow(prop)
-	elif current_map == "tokyo_neon":
-		_prop_tokyo(prop)
 	else:
 		_prop_neon(prop)
 
@@ -521,27 +492,6 @@ func _prop_moscow(prop: Node3D):
 		_add_glb(prop, RU_GLB + "tree-park-large.glb", randf_range(1.3, 1.8), Vector3.ZERO, rng.randf() * TAU)
 	else:
 		_add_glb(prop, RU_GLB + "detail-bench.glb", randf_range(1.1, 1.5), Vector3.ZERO, rng.randf() * TAU)
-
-func _prop_tokyo(prop: Node3D):
-	var side: float = signf(prop.position.x)
-	var kind: float = rng.randf()
-	if kind < 0.5:
-		var pole := _box(prop, Vector3(0.14, randf_range(2.6, 3.4), 0.14),
-			_mat(Color(0.05, 0.0, 0.08), Color(1.0, 0.25, 0.95), 1.8), Vector3.ZERO)
-		var sign := _add_glb(prop, CYBER_SIGN, 150.0,
-			Vector3(0.0, randf_range(2.0, 2.6), 0.0), 0.0)
-		if sign != null:
-			sign.rotation.y = side * 0.5
-	elif kind < 0.75:
-		var d: String = "detail-parasol-" + ("a" if rng.randf() < 0.5 else "b")
-		prop.position.x = side * randf_range(8.1, 8.6)
-		var pl := _add_glb(prop, K_GLB + d + ".glb", randf_range(5.5, 7.0), Vector3.ZERO, rng.randf() * TAU)
-		if pl != null:
-			Neon.tint_dark(pl, Color(1.4, 0.9, 1.7))
-	else:
-		var col := _box(prop, Vector3(0.34, randf_range(2.4, 3.2), 0.34),
-			_mat(Color(0.08, 0.0, 0.12), Color(0.95, 0.3, 1.0), 2.4), Vector3.ZERO)
-		_box(prop, Vector3(0.55, 0.45, 0.55), mat_band, Vector3(0.0, randf_range(1.8, 2.4), 0.0))
 
 func _prop_neon(prop: Node3D):
 	var side: float = signf(prop.position.x)
@@ -607,11 +557,6 @@ func _process(delta):
 			c.position.x = nx
 			_rebuild_vehicle(c)
 
-	for a in _arches:
-		a.position.z += dz
-		if a.position.z > 45.0:
-			a.position.z -= 7 * 19.0
-
 	for p in _props:
 		p.position.z += dz
 		if p.position.z > 45.0:
@@ -633,28 +578,8 @@ func set_map(id: String):
 		_install_building(b)
 	for c in _cars:
 		_rebuild_vehicle(c)
-	_rebuild_tron()
 	_rebuild_snow()
-	_build_arches()
 	_build_props()
-
-func _rebuild_tron():
-	for w in _tron_walls:
-		w.free()
-	_tron_walls.clear()
-	if not _use_tron:
-		return
-	var ps: PackedScene = load(TRON_PATH)
-	if ps == null:
-		return
-	for side in [-1.0, 1.0]:
-		var holder := Node3D.new()
-		holder.position = Vector3(TRON_WALL_X * side, 0.0, 0.0)
-		var wall := ps.instantiate()
-		wall.scale = Vector3.ONE * 0.9
-		holder.add_child(wall)
-		add_child(holder)
-		_tron_walls.append(holder)
 
 func _rebuild_snow():
 	if _snow_node != null:
