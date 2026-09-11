@@ -11,6 +11,8 @@ var _people: Array[Node3D] = []
 var _cars: Array[Node3D] = []
 var _tron_walls: Array[Node3D] = []
 var _snow_node: GPUParticles3D
+var _props: Array[Node3D] = []
+var _arches: Array[Node3D] = []
 
 const K_GLB := "res://assets/kenney_city-kit-commercial_2.1/Models/GLB format/"
 const K_BUILDINGS := ["building-a", "building-b", "building-c", "building-d", "building-e",
@@ -29,6 +31,13 @@ const K_VEHICLES := ["res://assets/Spaceship by Quaternius - u105mYHLHU.glb",
 	"res://assets/Spaceship by Quaternius - uCeLfsdmNP.glb",
 	"res://assets/Drone by NateGazzard - DNbUoMtG3H.glb"]
 const TRON_PATH := "res://assets/troncityscape1 #FV7 by Fragmastre TV - 4o0bLgk8mhD.glb"
+const RU_GLB := "res://assets/kenney_retro-urban-kit/Models/GLB format/"
+const CYBER_GLB := "res://assets/Cyberpunk Platform by Quaternius - "
+const CYBER_SIGN := "res://assets/Cyberpunk Signs by Quaternius - rsZJjigt1X.glb"
+const K_DETAIL := ["detail-awning", "detail-awning-wide", "detail-overhang",
+	"detail-overhang-wide", "detail-parasol-a", "detail-parasol-b"]
+const RU_WALLS := ["wall-a", "wall-a-window", "wall-a-flat", "wall-a-detail",
+	"wall-a-door", "wall-a-garage", "wall-b", "wall-b-window", "wall-b-flat", "wall-type-a"]
 
 const BUILD_LEFT_X := -14.5
 const BUILD_RIGHT_X := 14.5
@@ -81,6 +90,8 @@ func _ready():
 	_build_buildings()
 	_build_people()
 	_build_cars()
+	_build_arches()
+	_build_props()
 
 func _apply_theme():
 	match current_map:
@@ -289,10 +300,15 @@ func _make_building(left: bool, slot: int) -> Node3D:
 	return holder
 
 func _random_building_path() -> String:
-	var r: float = rng.randf()
-	if r < 0.52:
+	if current_map == "tokyo_neon":
+		var r: float = rng.randf()
+		if r < 0.4:
+			return K_GLB + K_SKYSCRAPERS[rng.randi_range(0, K_SKYSCRAPERS.size() - 1)] + ".glb"
 		return K_GLB + K_BUILDINGS[rng.randi_range(0, K_BUILDINGS.size() - 1)] + ".glb"
-	elif r < 0.78:
+	var r2: float = rng.randf()
+	if r2 < 0.52:
+		return K_GLB + K_BUILDINGS[rng.randi_range(0, K_BUILDINGS.size() - 1)] + ".glb"
+	elif r2 < 0.78:
 		return K_GLB + K_SKYSCRAPERS[rng.randi_range(0, K_SKYSCRAPERS.size() - 1)] + ".glb"
 	return K_GLB + K_LOW[rng.randi_range(0, K_LOW.size() - 1)] + ".glb"
 
@@ -300,6 +316,9 @@ func _install_building(holder: Node3D):
 	for c in holder.get_children():
 		c.free()
 	holder.position.y = 0.0
+	if current_map == "moscow_frost":
+		_install_moscow_building(holder)
+		return
 	var ps: PackedScene = load(_random_building_path())
 	var inst := ps.instantiate()
 	holder.add_child(inst)
@@ -309,6 +328,8 @@ func _install_building(holder: Node3D):
 	if base_h <= 0.001:
 		base_h = 1.5
 	var target: float = randf_range(12.0, 34.0)
+	if current_map == "tokyo_neon":
+		target = randf_range(22.0, 48.0)
 	var depth: float = randf_range(6.2, 7.2)
 	inst.scale = Vector3(depth, target / base_h, depth)
 	var bb: AABB = Neon.aabb(holder)
@@ -364,10 +385,51 @@ func _make_person(co: Color) -> Node3D:
 		p.add_child(arm)
 	return p
 
+func _install_moscow_building(holder: Node3D):
+	holder.rotation.y = 0.0
+	var w := rng.randi_range(2, 3)
+	var h := rng.randi_range(2, 4)
+	var mm := rng.randf_range(2.6, 4.6)
+	var zrow := rng.randf_range(-1.0, 1.5)
+	var jit := rng.randf_range(0.15, 0.55)
+	for yi in range(h):
+		for xi in range(w):
+			var wall_path: String = RU_GLB + RU_WALLS[rng.randi_range(0, RU_WALLS.size() - 1)] + ".glb"
+			var ps: PackedScene = load(wall_path)
+			if ps == null:
+				continue
+			var inst := ps.instantiate()
+			holder.add_child(inst)
+			Neon.tint_dark(inst, _tint * (1.12 if yi + 1 == h else 1.0))
+			inst.scale = Vector3.ONE * mm
+			inst.position = Vector3((xi - (w - 1) * 0.5) * mm + rng.randf_range(-jit, jit), yi * mm, zrow * mm)
+	var roof_path := RU_GLB + "wall-a-roof.glb"
+	if FileAccess.file_exists(roof_path):
+		var ps2: PackedScene = load(roof_path)
+		if ps2 != null:
+			for xi in range(w):
+				var rf := ps2.instantiate()
+				holder.add_child(rf)
+				Neon.tint_dark(rf, _tint * 1.18)
+				rf.scale = Vector3.ONE * mm
+				rf.position = Vector3((xi - (w - 1) * 0.5) * mm + rng.randf_range(-jit, jit), h * mm, zrow * mm)
+	var bb: AABB = Neon.aabb(holder)
+	holder.position.y = -bb.position.y
+	var max_halfx := 14.5 - 9.8
+	var halfx: float = bb.size.x * 0.5
+	if halfx > max_halfx:
+		holder.scale.x *= max_halfx / halfx
+
+func _vehicle_path() -> String:
+	if current_map == "moscow_frost":
+		var t := ["truck-green", "truck-grey", "truck-green-cargo", "truck-grey-cargo"]
+		return RU_GLB + t[rng.randi_range(0, t.size() - 1)] + ".glb"
+	return K_VEHICLES[rng.randi_range(0, K_VEHICLES.size() - 1)]
+
 func _rebuild_vehicle(v: Node3D):
 	for c in v.get_children():
 		c.free()
-	var ps: PackedScene = load(K_VEHICLES[rng.randi_range(0, K_VEHICLES.size() - 1)])
+	var ps: PackedScene = load(_vehicle_path())
 	var inst := ps.instantiate()
 	v.add_child(inst)
 	var size: Vector3 = Neon.aabb(v).size
@@ -397,6 +459,8 @@ func _build_cars():
 		v.set_meta("slot", i)
 		var bx: float = rng.randf_range(-3.4, 3.4)
 		var by: float = rng.randf_range(6.0, 11.0)
+		if current_map == "moscow_frost":
+			by = rng.randf_range(0.6, 0.95)
 		var ph: float = rng.randf() * TAU
 		v.set_meta("_bx", bx)
 		v.set_meta("_by", by)
@@ -411,6 +475,140 @@ func _car_slot(i: int) -> float:
 
 func _mat(albedo: Color, emissive: Color, energy: float) -> StandardMaterial3D:
 	return _make_mat(albedo, emissive, energy)
+
+func _add_glb(parent: Node3D, path: String, scale: float, pos: Vector3, rot_y := 0.0) -> Node3D:
+	var ps: PackedScene = load(path)
+	if ps == null:
+		return null
+	var inst := ps.instantiate()
+	parent.add_child(inst)
+	inst.scale = Vector3.ONE * scale
+	inst.position = pos
+	inst.rotation.y = rot_y
+	return inst
+
+func _build_arches():
+	for a in _arches:
+		a.free()
+	_arches.clear()
+	if current_map != "tokyo_neon":
+		return
+	var n := 7
+	var step := 19.0
+	var start := -84.0
+	for i in range(n):
+		var arch := Node3D.new()
+		arch.position = Vector3(0.0, 0.0, start + i * step)
+		add_child(arch)
+		_box(arch, Vector3(0.42, 5.8, 0.42), mat_rail, Vector3(-6.45, 2.9, 0.0))
+		_box(arch, Vector3(0.42, 5.8, 0.42), mat_rail, Vector3(6.45, 2.9, 0.0))
+		_box(arch, Vector3(13.5, 0.5, 0.5), mat_curb, Vector3(0.0, 5.6, 0.0))
+		_box(arch, Vector3(2.4, 0.65, 0.2), mat_band, Vector3(0.0, 4.75, 0.0))
+		_arches.append(arch)
+
+func _build_props():
+	for p in _props:
+		p.free()
+	_props.clear()
+	var missions := {"neon_city": 22, "tokyo_neon": 36, "moscow_frost": 26}
+	var count: int = missions.get(current_map, 22)
+	for i in range(count):
+		var prop := Node3D.new()
+		add_child(prop)
+		_make_prop(prop)
+		_props.append(prop)
+
+func _make_prop(prop: Node3D):
+	prop.rotation.y = 0.0
+	var side: float = 1.0 if rng.randf() < 0.5 else -1.0
+	prop.position.x = side * randf_range(7.6, 9.2)
+	prop.position.y = 0.0
+	prop.position.z = randf_range(-88.0, 24.0)
+	var jz: float = rng.randf_range(5.0, 18.0)
+	if rng.randf() < 0.35:
+		jz *= -1.0
+	prop.set_meta("_jz", jz)
+	if current_map == "moscow_frost":
+		_prop_moscow(prop)
+	elif current_map == "tokyo_neon":
+		_prop_tokyo(prop)
+	else:
+		_prop_neon(prop)
+
+func _prop_moscow(prop: Node3D):
+	var side: float = signf(prop.position.x)
+	var kind: float = rng.randf()
+	if kind < 0.3:
+		var inst := _add_glb(prop, RU_GLB + "detail-light-single.glb", randf_range(4.0, 5.2),
+			Vector3.ZERO, rng.randf() * TAU)
+		if inst != null:
+			var lamp := OmniLight3D.new()
+			lamp.light_color = Color(1.0, 0.86, 0.6)
+			lamp.light_energy = 2.4
+			lamp.omni_range = 8.0
+			lamp.omni_attenuation = 1.7
+			inst.add_child(lamp)
+			lamp.position = Vector3(0.0, 3.4, 0.0)
+	elif kind < 0.55:
+		var t := "tree-pine-large" if rng.randf() < 0.6 else "tree-pine-small"
+		var tr := _add_glb(prop, RU_GLB + t + ".glb", randf_range(1.5, 2.2), Vector3.ZERO, rng.randf() * TAU)
+		if tr != null:
+			Neon.tint_dark(tr, Color(1.35, 1.4, 1.55))
+	elif kind < 0.68:
+		_add_glb(prop, RU_GLB + "tree-park-large.glb", randf_range(1.3, 1.8), Vector3.ZERO, rng.randf() * TAU)
+	elif kind < 0.85:
+		var misc := ["detail-bench", "detail-dumpster-closed", "detail-barrier-type-a", "detail-bricks-type-a"]
+		var m := _add_glb(prop, RU_GLB + misc[rng.randi_range(0, misc.size() - 1)] + ".glb",
+			randf_range(1.1, 1.6), Vector3.ZERO, rng.randf() * TAU)
+		if m != null:
+			Neon.tint_dark(m, Color(1.15, 1.2, 1.35))
+	else:
+		_add_glb(prop, RU_GLB + "detail-cables-type-a.glb", randf_range(2.0, 3.0),
+			Vector3(side * 1.6, 2.6, 0.0), 0.0)
+
+func _prop_tokyo(prop: Node3D):
+	var side: float = signf(prop.position.x)
+	var kind: float = rng.randf()
+	if kind < 0.38:
+		var cy := ["ctQ5CDmraQ", "J3AJSwqmBJ", "s0rwPHWMpY"]
+		var pth: String = CYBER_GLB + cy[rng.randi_range(0, cy.size() - 1)] + ".glb"
+		var plat := _add_glb(prop, pth, randf_range(48.0, 62.0),
+			Vector3(side * 1.9, randf_range(2.9, 3.8), 0.0), rng.randf() * TAU)
+		if plat != null:
+			Neon.tint_dark(plat, Color(1.3, 1.0, 1.6))
+	elif kind < 0.72:
+		var sign := _add_glb(prop, CYBER_SIGN, randf_range(120.0, 180.0),
+			Vector3(side * 0.3, randf_range(1.4, 2.4), 0.0), rng.randf() * 0.5 - 0.25)
+		if sign != null and rng.randf() < 0.4:
+			_add_glb(prop, CYBER_SIGN, randf_range(90.0, 130.0),
+				Vector3(side * 0.3, randf_range(2.5, 3.4), 0.15), rng.randf() * 0.5 - 0.25)
+	else:
+		var d: String = "detail-parasol-" + ("a" if rng.randf() < 0.5 else "b")
+		prop.position.x = side * randf_range(8.1, 8.6)
+		var pl := _add_glb(prop, K_GLB + d + ".glb", randf_range(5.5, 7.0), Vector3.ZERO, rng.randf() * TAU)
+		if pl != null:
+			Neon.tint_dark(pl, Color(1.4, 0.9, 1.7))
+
+func _prop_neon(prop: Node3D):
+	var side: float = signf(prop.position.x)
+	var kind: float = rng.randf()
+	if kind < 0.4:
+		var dvar: String = K_DETAIL[rng.randi_range(0, K_DETAIL.size() - 1)]
+		prop.position.x = side * randf_range(9.4, 9.9)
+		var det := _add_glb(prop, K_GLB + dvar + ".glb", randf_range(3.6, 4.8),
+			Vector3(0.0, randf_range(2.4, 3.2), 0.0), side * 0.0)
+		if det != null:
+			Neon.tint_dark(det, _tint)
+	elif kind < 0.7:
+		var pole := _box(prop, Vector3(0.16, randf_range(2.2, 3.0), 0.16),
+			_mat(Color(0.02, 0.02, 0.06), Color(0.0, 0.7, 1.0), 1.4), Vector3.ZERO)
+		_box(prop, Vector3(1.0, 0.5, 0.16), mat_band,
+			Vector3(0.0, randf_range(1.6, 2.4) + 0.25, 0.0))
+	else:
+		var pl := _add_glb(prop, K_GLB + "detail-parasol-a.glb", randf_range(5.5, 7.0),
+			Vector3.ZERO, rng.randf() * TAU)
+		if pl != null:
+			Neon.tint_dark(pl, _tint)
 
 func _process(delta):
 	var dz: float = speed * delta
@@ -455,6 +653,19 @@ func _process(delta):
 			c.position.x = nx
 			_rebuild_vehicle(c)
 
+	for a in _arches:
+		a.position.z += dz
+		if a.position.z > 45.0:
+			a.position.z -= 7 * 19.0
+
+	for p in _props:
+		p.position.z += dz
+		if p.position.z > 45.0:
+			p.position.z = BUILD_FAR - randf_range(0.0, 8.0) + float(p.get_meta("_jz"))
+			for ch in p.get_children():
+				ch.free()
+			_make_prop(p)
+
 func set_speed(s: float):
 	speed = s
 
@@ -470,6 +681,8 @@ func set_map(id: String):
 		_rebuild_vehicle(c)
 	_rebuild_tron()
 	_rebuild_snow()
+	_build_arches()
+	_build_props()
 
 func _rebuild_tron():
 	for w in _tron_walls:

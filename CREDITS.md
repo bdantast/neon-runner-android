@@ -12,8 +12,11 @@ mediante atribuição (ou livre, no caso de CC0). Esta lista deve ser mantida at
 
 ## Kenney Retro Urban Kit
 - **Autor:** Kenney (www.kenney.nl)
-- **Arquivo:** `assets/kenney_retro-urban-kit.zip`
-- **Licença:** CC0 (mesma política Kenney)
+- **Pasta:** `assets/kenney_retro-urban-kit/Models/GLB format/`
+- **Licença:** Creative Commons Zero (CC0) — uso livre para fins comerciais.
+  Atribuição sugerida (opcional): "Kenney - www.kenney.nl"
+- **Uso:** mapa Moscow Frost (edifícios-slab, postes de luz, pinheiros, caminhões, bancos, lixeiras, barreiras).
+- **Arquivo de licença:** `assets/kenney_retro-urban-kit/License.txt`
 
 ## Ultimate Modular Men Pack
 - **Autor:** Quaternius (www.quaternius.com)
@@ -55,6 +58,7 @@ Licenças CC (geralmente CC-BY) — manter a atribuição ao autor em builds e c
 - `assets/kenney_city-kit-commercial_2.1/License.txt` (CC0)
 - `assets/kenney_city-kit-commercial_2.1/View Documentation.url`
 - `assets/kenney_city-kit-commercial_2.1/Visit Kenney.url`
+- `assets/kenney_retro-urban-kit/License.txt` (CC0)
 
 > Nota: conferir a licença exata de cada asset Sketchfab na página do autor antes de
 > publicar na loja; esta lista garante a rastreabilidade (procedência + autor).
