@@ -15,38 +15,29 @@ mediante atribuição (ou livre, no caso de CC0). Esta lista deve ser mantida at
 - **Pasta:** `assets/kenney_retro-urban-kit/Models/GLB format/`
 - **Licença:** Creative Commons Zero (CC0) — uso livre para fins comerciais.
   Atribuição sugerida (opcional): "Kenney - www.kenney.nl"
-- **Uso:** decoração do mapa Moscow Frost (postes de luz, pinheiros nevados, bancos).
+- **Uso:** decoração do mapa Moscow Frost (postes de luz, pinheiros nevados, bancos, lixeiras, barreiras).
 - **Arquivo de licença:** `assets/kenney_retro-urban-kit/License.txt`
 
 ## Ultimate Modular Men Pack
 - **Autor:** Quaternius (www.quaternius.com)
-- **Arquivo:** `assets/Ultimate Modular Men Pack-glb.zip`
+- **Pasta:** `assets/men-pack/`
 - **Licença:** CC0 (Quaternius disponibiliza os packs gratuitamente para uso comercial)
+- **Uso:** pedestres animados nos mapas Neon City e Tokyo Neon.
 
 ## Assets do Sketchfab / Poly (GLB) — atribuição por autor
 Os modelos abaixo vêm do Sketchfab (alguns originários do Google Poly).
 Licenças CC (geralmente CC-BY) — manter a atribuição ao autor em builds e créditos.
 
-| Asset | Autor |
-|---|---|
-| Apartment building | Poly by Google |
-| Bar | Poly by Google |
-| Bot Drone | Dave404 |
-| Building | Kay Lousberg |
-| CAR Model (Lamborghini Aventador) | Ignition Labs |
-| Blade Runner Memory Orb | Don Carson |
-| Cyberpunk Platform | Quaternius |
-| Cyberpunk Signs | Quaternius |
-| Drone | NateGazzard |
-| Generic Robo dude | Erik Buchholtz |
-| Richie | joney_lol |
-| Rover | Quaternius |
-| Skyscraper | Kenney |
-| Spaceship | Quaternius |
-| troncityscape1 | Fragmastre TV |
-| Turret Gun | Quaternius |
-| x-wing | Alberto Calvo (CC-BY) |
-| Astronaut (modular men pack) | Quaternius |
+| Asset | Autor | Uso |
+|---|---|---|
+| Bot Drone | Dave404 | Inimigo voador (obstáculo "bot") |
+| Blade Runner Memory Orb | Don Carson | Moeda coletável do Tokyo Neon |
+| Drone | NateGazzard | Veículo voador de fundo |
+| Generic Robo dude | Erik Buchholtz | Inimigo "robo" |
+| Richie | joney_lol | Inimigo "richie" |
+| Spaceship | Quaternius | Veículo voador de fundo |
+| x-wing | Alberto Calvo (CC-BY) | Veículo voador de fundo |
+| Astronaut (modular men pack) | Quaternius | Herói jogável |
 
 ## Áudio
 - **Música de fundo:** `assets/audio/music.wav` — produção própria.
