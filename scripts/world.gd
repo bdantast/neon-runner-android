@@ -9,6 +9,8 @@ var _buildings_l: Array[Node3D] = []
 var _buildings_r: Array[Node3D] = []
 var _people: Array[Node3D] = []
 var _cars: Array[Node3D] = []
+var _tron_walls: Array[Node3D] = []
+var _snow_node: GPUParticles3D
 
 const K_GLB := "res://assets/kenney_city-kit-commercial_2.1/Models/GLB format/"
 const K_BUILDINGS := ["building-a", "building-b", "building-c", "building-d", "building-e",
@@ -26,6 +28,7 @@ const K_VEHICLES := ["res://assets/Spaceship by Quaternius - u105mYHLHU.glb",
 	"res://assets/x-wing by Alberto Calvo - d6Xadlg51aC.glb",
 	"res://assets/Spaceship by Quaternius - uCeLfsdmNP.glb",
 	"res://assets/Drone by NateGazzard - DNbUoMtG3H.glb"]
+const TRON_PATH := "res://assets/troncityscape1 #FV7 by Fragmastre TV - 4o0bLgk8mhD.glb"
 
 const BUILD_LEFT_X := -14.5
 const BUILD_RIGHT_X := 14.5
@@ -36,6 +39,7 @@ const BUILD_COUNT := 42
 const DASH_SPACING := 5.0
 const DASH_COUNT := 18
 const SIDEWALK_X := 7.7
+const TRON_WALL_X := 132.0
 
 var mat_road: StandardMaterial3D
 var mat_curb: StandardMaterial3D
@@ -44,8 +48,32 @@ var mat_rail: StandardMaterial3D
 var mat_roof: StandardMaterial3D
 var mat_band: StandardMaterial3D
 
+var _tint := Color(1.0, 1.0, 1.0)
+var _road_a := Color(0.85, 0.9, 1.0)
+var _curb_a := Color(0.0, 0.28, 0.4)
+var _curb_e := Color(0.0, 0.7, 1.0)
+var _curb_en := 1.3
+var _div_a := Color(0.0, 0.4, 0.5)
+var _div_e := Color(0.0, 0.9, 1.0)
+var _div_en := 1.8
+var _rail_a := Color(0.02, 0.02, 0.06)
+var _rail_e := Color(0.5, 0.15, 1.0)
+var _rail_en := 1.1
+var _roof_a := Color(0.3, 0.0, 0.45)
+var _roof_e := Color(0.9, 0.3, 1.0)
+var _roof_en := 2.6
+var _band_a := Color(0.0, 0.2, 0.32)
+var _band_e := Color(0.0, 0.75, 1.0)
+var _band_en := 1.4
+var _people_palette: Array = [Color(0.2, 0.1, 0.3), Color(0.15, 0.0, 0.25), Color(0.05, 0.15, 0.3), Color(0.25, 0.05, 0.2)]
+var _veh_glow := Color(0.3, 0.9, 1.0)
+var _veh_lamp := Color(0.4, 0.9, 1.0)
+var _use_tron := false
+var _use_snow := false
+
 func _ready():
 	rng.randomize()
+	_apply_theme()
 	_build_materials()
 	_build_road()
 	_build_dividers()
@@ -54,43 +82,115 @@ func _ready():
 	_build_people()
 	_build_cars()
 
+func _apply_theme():
+	match current_map:
+		"tokyo_neon":
+			_tint = Color(1.25, 1.0, 1.5)
+			_road_a = Color(0.45, 0.18, 0.5)
+			_curb_a = Color(0.3, 0.0, 0.26)
+			_curb_e = Color(1.0, 0.2, 0.85)
+			_curb_en = 1.4
+			_div_a = Color(0.32, 0.0, 0.22)
+			_div_e = Color(1.0, 0.3, 0.95)
+			_div_en = 1.9
+			_rail_a = Color(0.06, 0.01, 0.09)
+			_rail_e = Color(0.9, 0.2, 1.0)
+			_rail_en = 1.3
+			_roof_a = Color(0.42, 0.0, 0.32)
+			_roof_e = Color(1.0, 0.2, 0.8)
+			_roof_en = 2.7
+			_band_a = Color(0.2, 0.0, 0.22)
+			_band_e = Color(0.4, 0.9, 1.0)
+			_band_en = 1.6
+			_people_palette = [Color(0.4, 0.1, 0.35), Color(0.9, 0.3, 0.6), Color(0.2, 0.35, 0.45), Color(0.5, 0.15, 0.3)]
+			_veh_glow = Color(1.0, 0.35, 0.8)
+			_veh_lamp = Color(1.0, 0.45, 0.9)
+			_use_tron = true
+			_use_snow = false
+		"moscow_frost":
+			_tint = Color(1.3, 1.33, 1.65)
+			_road_a = Color(0.65, 0.72, 0.9)
+			_curb_a = Color(0.2, 0.4, 0.6)
+			_curb_e = Color(0.5, 0.85, 1.0)
+			_curb_en = 1.2
+			_div_a = Color(0.25, 0.5, 0.65)
+			_div_e = Color(0.7, 0.95, 1.0)
+			_div_en = 1.7
+			_rail_a = Color(0.03, 0.04, 0.1)
+			_rail_e = Color(0.5, 0.8, 1.0)
+			_rail_en = 1.2
+			_roof_a = Color(0.2, 0.35, 0.5)
+			_roof_e = Color(0.6, 0.9, 1.0)
+			_roof_en = 2.5
+			_band_a = Color(0.12, 0.26, 0.38)
+			_band_e = Color(0.6, 0.95, 1.0)
+			_band_en = 1.5
+			_people_palette = [Color(0.1, 0.2, 0.3), Color(0.4, 0.45, 0.6), Color(0.15, 0.25, 0.4), Color(0.3, 0.35, 0.5)]
+			_veh_glow = Color(0.6, 0.9, 1.0)
+			_veh_lamp = Color(0.8, 0.95, 1.0)
+			_use_tron = false
+			_use_snow = true
+		_:
+			_tint = Color(1.1, 1.15, 1.4)
+			_road_a = Color(0.85, 0.9, 1.0)
+			_curb_a = Color(0.0, 0.28, 0.4)
+			_curb_e = Color(0.0, 0.7, 1.0)
+			_curb_en = 1.3
+			_div_a = Color(0.0, 0.4, 0.5)
+			_div_e = Color(0.0, 0.9, 1.0)
+			_div_en = 1.8
+			_rail_a = Color(0.02, 0.02, 0.06)
+			_rail_e = Color(0.5, 0.15, 1.0)
+			_rail_en = 1.1
+			_roof_a = Color(0.3, 0.0, 0.45)
+			_roof_e = Color(0.9, 0.3, 1.0)
+			_roof_en = 2.6
+			_band_a = Color(0.0, 0.2, 0.32)
+			_band_e = Color(0.0, 0.75, 1.0)
+			_band_en = 1.4
+			_people_palette = [Color(0.2, 0.1, 0.3), Color(0.15, 0.0, 0.25), Color(0.05, 0.15, 0.3), Color(0.25, 0.05, 0.2)]
+			_veh_glow = Color(0.3, 0.9, 1.0)
+			_veh_lamp = Color(0.4, 0.9, 1.0)
+			_use_tron = false
+			_use_snow = false
+
 func _build_materials():
 	mat_road = StandardMaterial3D.new()
 	mat_road.albedo_texture = _road_texture()
-	mat_road.albedo_color = Color(0.85, 0.9, 1.0)
+	mat_road.albedo_color = _road_a
 	mat_road.roughness = 0.45
 	mat_road.metallic = 0.15
 	mat_road.uv1_scale = Vector3(6.0, 1.0, 60.0)
 
 	mat_curb = StandardMaterial3D.new()
-	mat_curb.albedo_color = Color(0.0, 0.28, 0.4)
+	mat_curb.albedo_color = _curb_a
 	mat_curb.emission_enabled = true
-	mat_curb.emission = Color(0.0, 0.7, 1.0)
-	mat_curb.emission_energy_multiplier = 1.3
+	mat_curb.emission = _curb_e
+	mat_curb.emission_energy_multiplier = _curb_en
 
 	mat_divider = StandardMaterial3D.new()
-	mat_divider.albedo_color = Color(0.0, 0.4, 0.5)
+	mat_divider.albedo_color = _div_a
 	mat_divider.emission_enabled = true
-	mat_divider.emission = Color(0.0, 0.9, 1.0)
-	mat_divider.emission_energy_multiplier = 1.8
+	mat_divider.emission = _div_e
+	mat_divider.emission_energy_multiplier = _div_en
 
 	mat_rail = StandardMaterial3D.new()
-	mat_rail.albedo_color = Color(0.02, 0.02, 0.06)
+	mat_rail.albedo_color = _rail_a
 	mat_rail.emission_enabled = true
-	mat_rail.emission = Color(0.5, 0.15, 1.0)
-	mat_rail.emission_energy_multiplier = 1.1
+	mat_rail.emission = _rail_e
+	mat_rail.emission_energy_multiplier = _rail_en
 
 	mat_roof = StandardMaterial3D.new()
-	mat_roof.albedo_color = Color(0.3, 0.0, 0.45)
+	mat_roof.albedo_color = _roof_a
 	mat_roof.emission_enabled = true
-	mat_roof.emission = Color(0.9, 0.3, 1.0)
-	mat_roof.emission_energy_multiplier = 2.6
+	mat_roof.emission = _roof_e
+	mat_roof.emission_energy_multiplier = _roof_en
 
 	mat_band = StandardMaterial3D.new()
-	mat_band.albedo_color = Color(0.0, 0.2, 0.32)
+	mat_band.albedo_color = _band_a
 	mat_band.emission_enabled = true
-	mat_band.emission = Color(0.0, 0.75, 1.0)
-	mat_band.emission_energy_multiplier = 1.4
+	mat_band.emission = _band_e
+	mat_band.emission_energy_multiplier = _band_en
 
 func _road_texture() -> ImageTexture:
 	var img := Image.create(256, 256, false, Image.FORMAT_RGBA8)
@@ -161,7 +261,7 @@ func _build_dividers():
 
 func _build_sidewalks():
 	var sb_mat := _make_mat(Color(0.05, 0.05, 0.1), Color.BLACK, 0.0, 0.95)
-	var edge_mat := _make_mat(Color(0.02, 0.02, 0.06), Color(0.6, 0.2, 1.0), 1.2)
+	var edge_mat := _make_mat(Color(0.02, 0.02, 0.06), _rail_e, 1.2)
 	_box(self, Vector3(1.6, 0.16, 420.0), sb_mat, Vector3(-SIDEWALK_X, 0.08, 0.0))
 	_box(self, Vector3(1.6, 0.16, 420.0), sb_mat, Vector3(SIDEWALK_X, 0.08, 0.0))
 	_box(self, Vector3(0.08, 0.22, 420.0), edge_mat, Vector3(-7.0, 0.11, 0.0))
@@ -203,7 +303,7 @@ func _install_building(holder: Node3D):
 	var ps: PackedScene = load(_random_building_path())
 	var inst := ps.instantiate()
 	holder.add_child(inst)
-	Neon.tint_dark(inst, Color(1.1, 1.15, 1.4))
+	Neon.tint_dark(inst, _tint)
 	holder.rotation.y = rng.randi_range(0, 1) * PI
 	var base_h: float = Neon.aabb(holder).size.y
 	if base_h <= 0.001:
@@ -236,9 +336,8 @@ func _recycle_building(b: Node3D):
 	_install_building(b)
 
 func _build_people():
-	var jacket := [Color(0.2, 0.1, 0.3), Color(0.15, 0.0, 0.25), Color(0.05, 0.15, 0.3), Color(0.25, 0.05, 0.2)]
 	for i in range(8):
-		var p := _make_person(jacket[i % jacket.size()])
+		var p := _make_person(_people_palette[i % _people_palette.size()])
 		p.position = Vector3(SIDEWALK_X * (1.0 if i < 4 else -1.0), 0.15, randf_range(-45.0, 20.0))
 		p.rotation.y = rng.randf_range(-0.3, 0.3)
 		_people.append(p)
@@ -278,12 +377,12 @@ func _rebuild_vehicle(v: Node3D):
 	var sm := SphereMesh.new()
 	sm.radius = 0.16
 	sm.height = 0.32
-	sm.material = _mat(Color(0.0, 0.0, 0.0), Color(0.3, 0.9, 1.0), 5.0)
+	sm.material = _mat(Color(0.0, 0.0, 0.0), _veh_glow, 5.0)
 	glow.mesh = sm
 	glow.position = Vector3(0.0, -0.35, 0.45)
 	v.add_child(glow)
 	var lamp := OmniLight3D.new()
-	lamp.light_color = Color(0.4, 0.9, 1.0)
+	lamp.light_color = _veh_lamp
 	lamp.light_energy = 1.4
 	lamp.omni_range = 4.2
 	lamp.omni_attenuation = 1.6
@@ -360,15 +459,58 @@ func set_speed(s: float):
 	speed = s
 
 func set_map(id: String):
-	if id == current_map:
-		return
 	current_map = id
-	var c := color_street()
-	if c != Color.BLACK:
-		mat_road.albedo_color = c
+	_apply_theme()
+	_build_materials()
+	for b in _buildings_l:
+		_install_building(b)
+	for b in _buildings_r:
+		_install_building(b)
+	for c in _cars:
+		_rebuild_vehicle(c)
+	_rebuild_tron()
+	_rebuild_snow()
 
-func color_street() -> Color:
-	match current_map:
-		"tokyo_neon": return Color(0.05, 0.03, 0.08)
-		"moscow_frost": return Color(0.06, 0.08, 0.12)
-	return Color.BLACK
+func _rebuild_tron():
+	for w in _tron_walls:
+		w.free()
+	_tron_walls.clear()
+	if not _use_tron:
+		return
+	var ps: PackedScene = load(TRON_PATH)
+	if ps == null:
+		return
+	for side in [-1.0, 1.0]:
+		var holder := Node3D.new()
+		holder.position = Vector3(TRON_WALL_X * side, 0.0, 0.0)
+		var wall := ps.instantiate()
+		wall.scale = Vector3.ONE * 0.9
+		holder.add_child(wall)
+		add_child(holder)
+		_tron_walls.append(holder)
+
+func _rebuild_snow():
+	if _snow_node != null:
+		_snow_node.queue_free()
+		_snow_node = null
+	if not _use_snow:
+		return
+	var p := GPUParticles3D.new()
+	var pm := ParticleProcessMaterial.new()
+	pm.direction = Vector3(0, -1, 0)
+	pm.spread = 4.0
+	pm.initial_velocity_min = 0.2
+	pm.initial_velocity_max = 0.5
+	pm.gravity = Vector3(0, -0.5, 0)
+	pm.scale_min = 0.04
+	pm.scale_max = 0.09
+	pm.color = Color(1, 1, 1, 0.85)
+	pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+	pm.emission_box_extents = Vector3(40, 24, 280)
+	p.process_material = pm
+	p.amount = 160
+	p.lifetime = 9.0
+	p.local_coords = false
+	add_child(p)
+	p.position = Vector3(0, 42, 10)
+	_snow_node = p

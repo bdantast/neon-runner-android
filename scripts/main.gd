@@ -3,6 +3,7 @@ extends Node3D
 @onready var player: CharacterBody3D = $Player
 @onready var camera: Camera3D = $Camera3D
 @onready var world = $World
+@onready var env: WorldEnvironment = $WorldEnvironment
 @onready var score_label: Label = $UI/ScoreLabel
 @onready var energy_label: Label = $UI/EnergyLabel
 @onready var time_label: Label = $UI/TimeLabel
@@ -51,13 +52,14 @@ func _ready():
 	hint_label.visible = true
 	current_map = Progress._current_map
 	world.set_map(current_map)
+	env.apply_theme(current_map)
 	high_score = int(Progress.best_scores.get(current_map, 0))
 	Combo.reset()
 	_connect_combo()
 	player.died.connect(_on_player_died)
 	_setup_level_ui()
 	_setup_combo_ui()
-	AudioManager.play_music()
+	AudioManager.play_music(current_map)
 	spawn_initial()
 
 func _setup_combo_ui():
