@@ -9,6 +9,12 @@ var _glow_mesh: MeshInstance3D
 var _rotor: Node3D
 
 const MAT_RED := Color(1.0, 0.15, 0.15)
+const MODEL_PATHS := {
+	"robo": "res://assets/Generic Robo dude by Erik Buchholtz - 0wnOYufJaPm.glb",
+	"richie": "res://assets/Richie by joney_lol - BwaLw2Olre.glb",
+	"bot": "res://assets/Bot Drone by Dave404 - 2iyQx2YscRq.glb",
+}
+const ENEMY_HEIGHT := {"robo": 1.55, "richie": 2.05, "bot": 1.4}
 
 func setup(type: String, spd: float):
 	obstacle_type = type
@@ -42,7 +48,32 @@ func build():
 	area.body_entered.connect(_on_body_entered)
 	add_child(area)
 
-	_build_visual()
+	if not _attach_model():
+		_build_visual_procedural()
+
+func _attach_model() -> bool:
+	var path: String = MODEL_PATHS.get(obstacle_type, "")
+	if path == "":
+		return false
+	var ps: PackedScene = load(path)
+	if ps == null:
+		return false
+	var inst: Node3D = ps.instantiate()
+	add_child(inst)
+	var h: float = ENEMY_HEIGHT.get(obstacle_type, 1.5)
+	Neon.fit_local(inst, h)
+	match obstacle_type:
+		"robo":
+			inst.rotation.y = PI
+			_glow_mesh = _make_eye(Vector3(0.0, h + 0.04, 0.16))
+		"richie":
+			_glow_mesh = _make_eye(Vector3(0.0, h * 0.6, 0.75))
+		_:
+			inst.rotation.y = randf() * TAU
+			_glow_mesh = _make_eye(Vector3(0.0, 0.05, 0.4))
+	Neon.tint_dark(inst, Color(0.6, 0.46, 0.54))
+	_rotor = null
+	return true
 
 func _on_body_entered(body):
 	if body.is_in_group("player"):
@@ -91,7 +122,7 @@ func _make_eye(pos: Vector3) -> MeshInstance3D:
 	mi.position = pos
 	return mi
 
-func _build_visual():
+func _build_visual_procedural():
 	var dark := _mat(Color(0.02, 0.02, 0.06), Color(0.012, 0.0, 0.0), 0.15)
 	var metal := _mat(Color(0.08, 0.04, 0.05), Color(0.05, 0.0, 0.0), 0.3)
 	var red := _mat(Color(0.35, 0.02, 0.02), MAT_RED, 3.2)

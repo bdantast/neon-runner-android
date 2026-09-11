@@ -70,6 +70,10 @@ var _people_palette: Array = [Color(0.2, 0.1, 0.3), Color(0.15, 0.0, 0.25), Colo
 var _veh_glow := Color(0.3, 0.9, 1.0)
 var _veh_lamp := Color(0.4, 0.9, 1.0)
 var _use_snow := false
+var _sun_col := Color(0.15, 0.85, 1.0)
+var _skyline_col := Color(0.05, 0.02, 0.09)
+var _win_col := Color(0.0, 0.8, 1.0)
+var _win_en := 1.4
 
 func _ready():
 	rng.randomize()
@@ -82,6 +86,7 @@ func _ready():
 	_build_people()
 	_build_cars()
 	_build_props()
+	_build_sky()
 
 func _apply_theme():
 	match current_map:
@@ -106,6 +111,10 @@ func _apply_theme():
 			_people_palette = [Color(0.15, 0.2, 0.4), Color(0.35, 0.1, 0.45), Color(0.1, 0.3, 0.35), Color(0.45, 0.15, 0.3)]
 			_veh_glow = Color(0.5, 0.6, 1.0)
 			_veh_lamp = Color(0.6, 0.7, 1.0)
+			_sun_col = Color(1.0, 0.4, 0.65)
+			_skyline_col = Color(0.09, 0.02, 0.13)
+			_win_col = Color(1.0, 0.45, 0.85)
+			_win_en = 1.6
 			_use_snow = false
 		"moscow_frost":
 			_tint = Color(1.3, 1.33, 1.65)
@@ -128,6 +137,10 @@ func _apply_theme():
 			_people_palette = [Color(0.1, 0.2, 0.3), Color(0.4, 0.45, 0.6), Color(0.15, 0.25, 0.4), Color(0.3, 0.35, 0.5)]
 			_veh_glow = Color(0.6, 0.9, 1.0)
 			_veh_lamp = Color(0.8, 0.95, 1.0)
+			_sun_col = Color(0.8, 0.92, 1.0)
+			_skyline_col = Color(0.035, 0.05, 0.09)
+			_win_col = Color(0.65, 0.85, 1.0)
+			_win_en = 1.2
 			_use_snow = true
 		_:
 			_tint = Color(1.1, 1.15, 1.4)
@@ -148,8 +161,10 @@ func _apply_theme():
 			_band_e = Color(0.0, 0.75, 1.0)
 			_band_en = 1.4
 			_people_palette = [Color(0.2, 0.1, 0.3), Color(0.15, 0.0, 0.25), Color(0.05, 0.15, 0.3), Color(0.25, 0.05, 0.2)]
-			_veh_glow = Color(0.3, 0.9, 1.0)
-			_veh_lamp = Color(0.4, 0.9, 1.0)
+			_sun_col = Color(0.15, 0.85, 1.0)
+			_skyline_col = Color(0.05, 0.02, 0.09)
+			_win_col = Color(0.0, 0.8, 1.0)
+			_win_en = 1.4
 			_use_snow = false
 
 func _build_materials():
@@ -259,16 +274,83 @@ func _build_dividers():
 
 func _build_sidewalks():
 	var sb_mat := _make_mat(Color(0.05, 0.05, 0.1), Color.BLACK, 0.0, 0.95)
-	var edge_mat := _make_mat(Color(0.02, 0.02, 0.06), _rail_e, 1.2)
 	_box(self, Vector3(1.6, 0.16, 420.0), sb_mat, Vector3(-SIDEWALK_X, 0.08, 0.0))
 	_box(self, Vector3(1.6, 0.16, 420.0), sb_mat, Vector3(SIDEWALK_X, 0.08, 0.0))
-	_box(self, Vector3(0.08, 0.22, 420.0), edge_mat, Vector3(-7.0, 0.11, 0.0))
-	_box(self, Vector3(0.08, 0.22, 420.0), edge_mat, Vector3(7.0, 0.11, 0.0))
+	for sx in [-7.0, 7.0]:
+		_box(self, Vector3(0.08, 0.3, 420.0), mat_curb, Vector3(sx - 0.2, 0.15, 0.0))
+		_box(self, Vector3(0.08, 0.3, 420.0), mat_curb, Vector3(sx + 0.2, 0.15, 0.0))
 	var front_sb := _make_mat(Color(0.07, 0.07, 0.13), Color.BLACK, 0.0, 0.9)
 	_box(self, Vector3(2.8, 0.16, 420.0), front_sb, Vector3(-10.6, 0.08, 0.0))
 	_box(self, Vector3(2.8, 0.16, 420.0), front_sb, Vector3(10.6, 0.08, 0.0))
 	_box(self, Vector3(0.1, 0.04, 420.0), mat_curb, Vector3(-9.15, 0.18, 0.0))
 	_box(self, Vector3(0.1, 0.04, 420.0), mat_curb, Vector3(9.15, 0.18, 0.0))
+
+func _build_sky():
+	var tex := GradientTexture2D.new()
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(0.5, 0.0)
+	tex.width = 128
+	tex.height = 128
+	var g := Gradient.new()
+	g.offsets = PackedFloat32Array([0.0, 0.32, 1.0])
+	var sun_c := _sun_col
+	g.colors = PackedColorArray([
+		sun_c,
+		sun_c * 0.55,
+		Color(sun_c.r, sun_c.g, sun_c.b, 0.0)])
+	tex.gradient = g
+	var sun := Sprite3D.new()
+	sun.texture = tex
+	sun.pixel_size = 40.0 / 128.0
+	sun.modulate = _sun_col.lightened(0.25)
+	sun.no_depth_test = true
+	sun.position = Vector3(0.0, 26.0, -340.0)
+	var smat := StandardMaterial3D.new()
+	smat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	smat.albedo_texture = tex
+	smat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	smat.emission_enabled = true
+	smat.emission_texture = tex
+	smat.emission_energy_multiplier = 1.6
+	sun.material_override = smat
+	add_child(sun)
+
+	var stars := CPUParticles3D.new()
+	stars.direction = Vector3.UP
+	stars.spread = 180.0
+	stars.gravity = Vector3.ZERO
+	stars.initial_velocity_min = 0.0
+	stars.initial_velocity_max = 0.0
+	stars.scale_amount_min = 0.08
+	stars.scale_amount_max = 0.28
+	stars.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+	stars.emission_box_extents = Vector3(90.0, 26.0, 70.0)
+	stars.color = Color(0.85, 0.95, 1.0, 0.9)
+	stars.amount = 140
+	stars.lifetime = 30.0
+	stars.preprocess = 21.0
+	stars.position = Vector3(0.0, 30.0, -280.0)
+	add_child(stars)
+	_build_skyline()
+
+func _build_skyline():
+	var dark_mat := _make_mat(_skyline_col, Color.BLACK, 0.0, 1.0)
+	var win_mat := _make_mat(Color(0.04, 0.03, 0.06), _win_col, _win_en, 0.6)
+	var rows := [[-250.0, 22.0], [-325.0, 15.0]]
+	for row in rows:
+		var hmax: float = row[1]
+		var z: float = row[0]
+		var step: float = rng.randf_range(4.2, 6.5)
+		var x := -66.0
+		while x < 66.0:
+			var w: float = rng.randf_range(3.5, 7.5)
+			var h: float = rng.randf_range(hmax * 0.4, hmax)
+			_box(self, Vector3(w, h, 3.0), dark_mat, Vector3(x + w * 0.5, h * 0.5, z))
+			if rng.randf() < 0.55:
+				var wy: float = rng.randf_range(2.2, h - 3.0)
+				_box(self, Vector3(0.8, 0.9, 0.14), win_mat, Vector3(x + w * 0.5, wy, z - 1.6))
+			x += w + step
 
 func _build_buildings():
 	for i in range(BUILD_COUNT):
@@ -353,12 +435,33 @@ func _recycle_building(b: Node3D):
 	_install_building(b)
 
 func _build_people():
+	var men: bool = current_map != "moscow_frost"
 	for i in range(8):
-		var p := _make_person(_people_palette[i % _people_palette.size()])
+		var p: Node3D = _make_men_person() if men else _make_person(_people_palette[i % _people_palette.size()])
 		p.position = Vector3(SIDEWALK_X * (1.0 if i < 4 else -1.0), 0.15, randf_range(-45.0, 20.0))
 		p.rotation.y = rng.randf_range(-0.3, 0.3)
 		_people.append(p)
 		add_child(p)
+
+const MEN_PACK := ["Business Man", "Worker", "Casual Character", "Hoodie Character", "Punk", "King"]
+
+func _make_men_person() -> Node3D:
+	var p := Node3D.new()
+	var path: String = "res://assets/men-pack/" + MEN_PACK[rng.randi_range(0, MEN_PACK.size() - 1)] + ".glb"
+	var ps: PackedScene = load(path)
+	if ps == null:
+		return _make_person(Color(0.2, 0.2, 0.4))
+	var inst: Node3D = ps.instantiate()
+	p.add_child(inst)
+	Neon.fit_local(inst, 2.5)
+	inst.rotation.y = rng.randf() * TAU
+	for ap in inst.find_children("*", "AnimationPlayer", true, false):
+		var apn := ap as AnimationPlayer
+		if apn.has_animation("CharacterArmature|Run"):
+			apn.get_animation("CharacterArmature|Run").loop_mode = Animation.LOOP_LINEAR
+			apn.speed_scale = rng.randf_range(0.85, 1.15)
+			apn.play("CharacterArmature|Run")
+	return p
 
 func _make_person(co: Color) -> Node3D:
 	var p := Node3D.new()
@@ -491,7 +594,9 @@ func _prop_moscow(prop: Node3D):
 	elif kind < 0.72:
 		_add_glb(prop, RU_GLB + "tree-park-large.glb", randf_range(1.3, 1.8), Vector3.ZERO, rng.randf() * TAU)
 	else:
-		_add_glb(prop, RU_GLB + "detail-bench.glb", randf_range(1.1, 1.5), Vector3.ZERO, rng.randf() * TAU)
+		var k: float = rng.randf()
+		var name: String = "detail-bench" if k < 0.35 else ("detail-dumpster-closed" if k < 0.7 else "detail-barrier-type-a")
+		_add_glb(prop, RU_GLB + name + ".glb", randf_range(1.0, 1.5), Vector3.ZERO, rng.randf() * TAU)
 
 func _prop_neon(prop: Node3D):
 	var side: float = signf(prop.position.x)

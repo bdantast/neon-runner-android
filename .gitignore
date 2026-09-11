@@ -9,3 +9,8 @@
 *.local
 
 # Export templates (keep the source template, but not build artifacts)
+# Bloat / download archieves
+*.zip
+assets/**/Previews/
+assets/**/Models/OBJ format/
+assets/**/Models/FBX format/

@@ -175,6 +175,8 @@ func _spawn_coin(lane: int, z: float) -> Node3D:
 	var coin := CollectibleScript.new()
 	coin.position = Vector3([-2.0, 0.0, 2.0][lane], 1.4, z)
 	coin.speed = speed
+	if current_map == "tokyo_neon":
+		coin.model_path = CollectibleScript.MEMORY_ORB
 	coin.collected.connect(_on_collected)
 	add_child(coin)
 	return coin

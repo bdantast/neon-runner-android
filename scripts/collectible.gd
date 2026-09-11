@@ -5,7 +5,10 @@ signal collected(position: Vector3)
 var speed := 0.0
 var _spin := 0.0
 var _base_y := 0.0
-var _shell: MeshInstance3D
+var _shell: Node3D
+var model_path := ""
+
+const MEMORY_ORB := "res://assets/Blade Runner Memory Orb by Don Carson - d6YLA5_zLWS.glb"
 
 func _ready():
 	add_to_group("collectible")
@@ -19,19 +22,6 @@ func _ready():
 	area.add_child(shape)
 	area.body_entered.connect(_on_body_entered)
 	add_child(area)
-
-	var core := MeshInstance3D.new()
-	var sm := SphereMesh.new()
-	sm.radius = 0.16
-	sm.height = 0.32
-	var m := StandardMaterial3D.new()
-	m.albedo_color = Color(0.5, 1.0, 1.0)
-	m.emission_enabled = true
-	m.emission = Color(0.0, 1.0, 1.0)
-	m.emission_energy_multiplier = 6.0
-	sm.material = m
-	core.mesh = sm
-	add_child(core)
 
 	var halo := MeshInstance3D.new()
 	var hb := BoxMesh.new()
@@ -47,8 +37,31 @@ func _ready():
 	halo.mesh = hb
 	add_child(halo)
 
-	_base_y = position.y
+	if model_path != "":
+		var ps: PackedScene = load(model_path)
+		if ps != null:
+			var orb: Node3D = ps.instantiate()
+			add_child(orb)
+			Neon.fit_local(orb, 1.1)
+			_shell = orb
+			_base_y = position.y
+			return
+
+	var core := MeshInstance3D.new()
+	var sm := SphereMesh.new()
+	sm.radius = 0.16
+	sm.height = 0.32
+	var m := StandardMaterial3D.new()
+	m.albedo_color = Color(0.5, 1.0, 1.0)
+	m.emission_enabled = true
+	m.emission = Color(0.0, 1.0, 1.0)
+	m.emission_energy_multiplier = 6.0
+	sm.material = m
+	core.mesh = sm
+	add_child(core)
 	_shell = core
+
+	_base_y = position.y
 
 func _on_body_entered(body):
 	if body.is_in_group("player"):
