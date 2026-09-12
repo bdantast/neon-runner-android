@@ -8,6 +8,7 @@ var _divider_dashes: Array[MeshInstance3D] = []
 var _buildings_l: Array[Node3D] = []
 var _buildings_r: Array[Node3D] = []
 var _people: Array[Node3D] = []
+var _crowd: Array[MultiMeshInstance3D] = []
 var _cars: Array[Node3D] = []
 var _snow_node: GPUParticles3D
 var _props: Array[Node3D] = []
@@ -42,6 +43,7 @@ const DASH_SPACING := 5.0
 const DASH_COUNT := 18
 const SIDEWALK_X := 7.7
 const PEOPLE_COUNT := 30
+const CROWD_COUNT := 270
 const PEOPLE_X_MIN := 9.3
 const PEOPLE_X_MAX := 11.5
 
@@ -87,6 +89,7 @@ func _ready():
 	_build_sidewalks()
 	_build_buildings()
 	_build_people()
+	_build_crowd()
 	_build_cars()
 	_build_props()
 	_build_sky()
@@ -499,6 +502,9 @@ func _recycle_building(b: Node3D):
 	_install_building(b)
 
 func _build_people():
+	for p in _people:
+		p.free()
+	_people.clear()
 	for i in range(PEOPLE_COUNT):
 		var side := 1.0 if i % 2 == 0 else -1.0
 		var p: Node3D = _make_men_person()
@@ -512,6 +518,64 @@ func _build_people():
 		p.set_meta("_by", p.rotation.y)
 		_people.append(p)
 		add_child(p)
+
+func _build_crowd():
+	for mm in _crowd:
+		mm.free()
+	_crowd.clear()
+	var cols: Array = []
+	match current_map:
+		"tokyo_neon":
+			cols = [Color(0.35, 0.18, 0.5), Color(0.55, 0.22, 0.5), Color(0.2, 0.38, 0.55), Color(0.6, 0.28, 0.45)]
+		"moscow_frost":
+			cols = [Color(0.18, 0.28, 0.45), Color(0.1, 0.2, 0.38), Color(0.24, 0.34, 0.5), Color(0.14, 0.25, 0.44)]
+		_:
+			cols = [Color(0.22, 0.12, 0.34), Color(0.16, 0.05, 0.28), Color(0.06, 0.16, 0.32), Color(0.28, 0.07, 0.22)]
+	var dark := _make_mat(Color(0.05, 0.05, 0.09), Color.BLACK, 0.0, 1.0)
+	var skin := _make_mat(Color(0.3, 0.24, 0.2), Color.BLACK, 0.0, 1.0)
+	var base: int = CROWD_COUNT / cols.size()
+	var rem: int = CROWD_COUNT % cols.size()
+	var made := 0
+	for c in cols:
+		var cnt: int = base + (1 if rem > 0 else 0)
+		rem -= 1
+		var fig := _crowd_figure(c, dark, skin)
+		var mm := MultiMesh.new()
+		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.mesh = fig
+		mm.instance_count = cnt
+		var mmi := MultiMeshInstance3D.new()
+		mmi.multimesh = mm
+		mmi.position.z = randf_range(-40.0, 0.0)
+		add_child(mmi)
+		for i in range(cnt):
+			var side := 1.0 if made % 2 == 0 else -1.0
+			var s: float = rng.randf_range(2.1, 2.45)
+			var basis := Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3.ONE * s)
+			var x := side * rng.randf_range(PEOPLE_X_MIN + 0.2, PEOPLE_X_MAX - 0.2)
+			var z := rng.randf_range(-150.0, 45.0)
+			mm.set_instance_transform(i, Transform3D(basis, Vector3(x, 0.0, z)))
+			made += 1
+		_crowd.append(mmi)
+
+func _crowd_figure(jacket_c: Color, dark: Material, skin: Material) -> Mesh:
+	var st := SurfaceTool.new()
+	var m := _make_mat(jacket_c, Color.BLACK, 0.0, 0.9)
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	_add_figure_box(st, Vector3(0.05, 0.34, 0.07), dark, Vector3(-0.055, 0.17, 0.06), 0.0)
+	_add_figure_box(st, Vector3(0.05, 0.34, 0.07), dark, Vector3(0.06, 0.17, -0.06), 0.0)
+	_add_figure_box(st, Vector3(0.27, 0.4, 0.15), m, Vector3(0.0, 0.64, 0.05), 0.12)
+	_add_figure_box(st, Vector3(0.16, 0.16, 0.16), skin, Vector3(0.0, 0.97, 0.07), 0.0)
+	_add_figure_box(st, Vector3(0.21, 0.05, 0.17), dark, Vector3(0.0, 1.09, 0.05), 0.0)
+	_add_figure_box(st, Vector3(0.05, 0.28, 0.06), m, Vector3(-0.18, 0.78, 0.14), -0.55)
+	_add_figure_box(st, Vector3(0.05, 0.28, 0.06), m, Vector3(0.18, 0.78, -0.16), 0.55)
+	return st.commit()
+
+func _add_figure_box(st: SurfaceTool, size: Vector3, mat: Material, pos: Vector3, lean: float):
+	var bm := BoxMesh.new()
+	bm.size = size
+	bm.material = mat
+	st.append_from(bm, 0, Transform3D(Basis(Vector3.RIGHT, lean), pos))
 
 const MEN_PACK := ["Business Man", "Worker", "Casual Character", "Hoodie Character", "Punk", "King"]
 
@@ -760,6 +824,11 @@ func _process(delta):
 				ch.free()
 			_make_prop(p)
 
+	for mmi in _crowd:
+		mmi.position.z += dz
+		if mmi.position.z > 42.0:
+			mmi.position.z = randf_range(-150.0, -100.0)
+
 func set_speed(s: float):
 	speed = s
 
@@ -775,6 +844,8 @@ func set_map(id: String):
 		_rebuild_vehicle(c)
 	_rebuild_snow()
 	_build_props()
+	_build_people()
+	_build_crowd()
 
 func _rebuild_snow():
 	if _snow_node != null:
