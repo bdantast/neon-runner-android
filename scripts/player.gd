@@ -3,12 +3,12 @@ extends CharacterBody3D
 signal died
 
 const GRAVITY := 32.0
-const JUMP_FORCE := 11.5
-const BUFFER_TIME := 0.12
+const JUMP_FORCE := 14.0
+const BUFFER_TIME := 0.15
 const LANE_X := [-2.0, 0.0, 2.0]
 const ASTRONAUT_SCENE := "res://assets/Astronaut.glb"
-const HERO_HEIGHT := 3.0
-const COLLIDE_H := 3.1
+const HERO_HEIGHT := 4.0
+const COLLIDE_H := 4.0
 const SLIDE_H := 1.0
 
 var lane := 1

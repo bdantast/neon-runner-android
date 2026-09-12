@@ -7,6 +7,10 @@ var unlocked_maps := ["neon_city"]
 var best_scores := {}
 var best_times := {}
 
+var ads_time := 0.0
+var ads_runs := 0
+var ads_last_shown := -600.0
+
 var _current_map := "neon_city"
 
 func _ready():
@@ -20,6 +24,9 @@ func _load():
 	unlocked_maps = cfg.get_value("maps", "unlocked", ["neon_city"])
 	best_scores = cfg.get_value("scores", "best", {})
 	best_times = cfg.get_value("times", "best", {})
+	ads_time = cfg.get_value("ads", "time", 0.0)
+	ads_runs = cfg.get_value("ads", "runs", 0)
+	ads_last_shown = cfg.get_value("ads", "last_shown", -600.0)
 
 func _save():
 	var cfg := ConfigFile.new()
@@ -27,7 +34,13 @@ func _save():
 	cfg.set_value("maps", "unlocked", unlocked_maps)
 	cfg.set_value("scores", "best", best_scores)
 	cfg.set_value("times", "best", best_times)
+	cfg.set_value("ads", "time", ads_time)
+	cfg.set_value("ads", "runs", ads_runs)
+	cfg.set_value("ads", "last_shown", ads_last_shown)
 	cfg.save(SAVE_PATH)
+
+func persist_now():
+	_save()
 
 func add_energy(amount: int):
 	energy_total += amount

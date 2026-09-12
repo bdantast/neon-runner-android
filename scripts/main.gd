@@ -17,10 +17,11 @@ extends Node3D
 
 const BASE_SPEED := 10.0
 const SPAWN_AHEAD := 95.0
-const INTERSTITIAL_GAP := 90.0
 const LEVEL_SECONDS := 30.0
 const LEVEL_SPEED_STEP := 0.1
 const MAX_SPEED := 45.0
+const REVIVE_MAX := 3
+const REVIVE_BONUS := 50
 
 const ObstacleScript := preload("res://scripts/obstacle.gd")
 const CollectibleScript := preload("res://scripts/collectible.gd")
@@ -36,7 +37,8 @@ var run_time := 0.0
 var current_map := "neon_city"
 var is_game_over := false
 var _spawn_timer := 3.0
-var _last_interstitial_at := -999.0
+var _revive_count := 0
+var _score_bonus := 0
 var _last_milestone := 0
 var rng := RandomNumberGenerator.new()
 var level := 1
@@ -232,6 +234,7 @@ func _process(delta):
 		return
 
 	run_time += delta
+	Ads.add_play_time(delta)
 	time_label.text = "%02d:%02d" % [int(run_time / 60.0), int(fmod(run_time, 60.0))]
 	Combo.tick(delta)
 
@@ -251,7 +254,7 @@ func _process(delta):
 
 	distance += speed * delta
 	score = int(distance * 0.5)
-	score_label.text = str(score)
+	score_label.text = str(score + _score_bonus)
 	if score >= _last_milestone + 100:
 		_last_milestone = score
 		_pulse_score()
@@ -314,20 +317,21 @@ func _spawn_wave():
 func _on_player_died():
 	is_game_over = true
 	Combo.reset()
+	Ads.on_run_ended()
 	Engine.time_scale = 0.3
 	AudioManager.play_hit()
 	_spawn_explosion()
 	_shake(0.25, 0.18)
 
-	if score > high_score:
-		high_score = score
-	Progress.save_best(current_map, score, run_time)
+	if score + _score_bonus > high_score:
+		high_score = score + _score_bonus
+	Progress.save_best(current_map, score + _score_bonus, run_time)
 
-	final_score.text = "SCORE    " + str(score)
+	final_score.text = "SCORE    " + str(score + _score_bonus)
 	final_best.text = "BEST        " + str(high_score)
 	final_energy.text = "ENERGY   " + str(energy)
 	final_time.text = "TIME      " + "%02d:%02d" % [int(run_time / 60.0), int(fmod(run_time, 60.0))]
-	revive_button.visible = Ads.available()
+	revive_button.visible = Ads.available() and _revive_count < REVIVE_MAX
 	game_over_panel.visible = true
 
 func _spawn_explosion():
@@ -351,20 +355,22 @@ func _spawn_explosion():
 
 func _on_restart_pressed():
 	Engine.time_scale = 1.0
+	Ads.maybe_show_interstitial()
 	get_tree().reload_current_scene()
 
 func _on_menu_pressed():
 	Engine.time_scale = 1.0
-	var now := Time.get_ticks_msec() / 1000.0
-	if now - _last_interstitial_at > INTERSTITIAL_GAP:
-		_last_interstitial_at = now
-		Ads.show_interstitial()
+	Ads.maybe_show_interstitial()
 	get_tree().change_scene_to_file("res://scenes/menu.tscn")
 
 func _on_revive_pressed():
 	if not Ads.available():
 		return
+	if _revive_count >= REVIVE_MAX:
+		return
+	_revive_count += 1
 	Ads.show_rewarded()
+	_score_bonus += REVIVE_BONUS
 	Engine.time_scale = 1.0
 	for n in get_tree().get_nodes_in_group(&"obstacle"):
 		n.free()
@@ -376,3 +382,4 @@ func _on_revive_pressed():
 	speed = maxf(BASE_SPEED, speed * 0.75)
 	game_over_panel.visible = false
 	is_game_over = false
+	revive_button.visible = _revive_count < REVIVE_MAX
