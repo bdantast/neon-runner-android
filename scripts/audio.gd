@@ -5,6 +5,8 @@ const SR := 44100
 var _music: AudioStreamPlayer
 var _collect: AudioStreamPlayer
 var _hit: AudioStreamPlayer
+var _combo: AudioStreamPlayer
+var _levelup: AudioStreamPlayer
 var _music_cache := {}
 var _active_music_theme := ""
 
@@ -15,13 +17,21 @@ func _ready():
 	_music.finished.connect(_on_music_finished)
 	add_child(_music)
 	_collect = AudioStreamPlayer.new()
-	_collect.volume_db = -32.0
+	_collect.volume_db = -20.0
 	_collect.stream = _collect_stream()
 	add_child(_collect)
 	_hit = AudioStreamPlayer.new()
 	_hit.volume_db = -5.0
 	_hit.stream = _hit_stream()
 	add_child(_hit)
+	_combo = AudioStreamPlayer.new()
+	_combo.volume_db = -24.0
+	_combo.stream = _combo_stream()
+	add_child(_combo)
+	_levelup = AudioStreamPlayer.new()
+	_levelup.volume_db = -22.0
+	_levelup.stream = _levelup_stream()
+	add_child(_levelup)
 
 func _theme_for_map(map_id: String) -> String:
 	match map_id:
@@ -61,6 +71,14 @@ func play_collect():
 func play_hit():
 	if _hit:
 		_hit.play()
+
+func play_combo():
+	if _combo and not _combo.playing:
+		_combo.play()
+
+func play_levelup():
+	if _levelup and not _levelup.playing:
+		_levelup.play()
 
 func _wav(samples: PackedFloat32Array) -> AudioStreamWAV:
 	var n: int = samples.size()
@@ -206,6 +224,57 @@ func _synth(theme: String) -> AudioStream:
 	s.loop_begin = 0
 	s.loop_end = int(n)
 	return s
+
+func _combo_stream() -> AudioStream:
+	if FileAccess.file_exists("res://assets/audio/combo.wav"):
+		return load("res://assets/audio/combo.wav")
+	if FileAccess.file_exists("res://assets/audio/combo.ogg"):
+		return load("res://assets/audio/combo.ogg")
+	var notes := [523.25, 659.25, 783.99, 1046.5]
+	var per := 0.13
+	var n := int(SR * per * notes.size())
+	var out := PackedFloat32Array()
+	out.resize(n)
+	for i in range(n):
+		var t: float = float(i) / float(SR)
+		var ni: int = int(t / per)
+		var local: float = t - ni * per
+		var f: float = notes[clampi(ni, 0, notes.size() - 1)]
+		var env := exp(-local * 16.0)
+		out[i] = (sin(TAU * f * t) + 0.45 * sin(TAU * f * 2.02 * t)) * env * 0.3
+	var peak := 0.0
+	for v in out:
+		peak = maxf(peak, absf(v))
+	if peak > 0.001:
+		for i in range(n):
+			out[i] *= 0.6 / peak
+	return _wav(out)
+
+func _levelup_stream() -> AudioStream:
+	if FileAccess.file_exists("res://assets/audio/levelup.wav"):
+		return load("res://assets/audio/levelup.wav")
+	if FileAccess.file_exists("res://assets/audio/levelup.ogg"):
+		return load("res://assets/audio/levelup.ogg")
+	var dur := 0.6
+	var n := int(SR * dur)
+	var out := PackedFloat32Array()
+	out.resize(n)
+	for i in range(n):
+		var t: float = float(i) / float(SR)
+		var prog: float = t / dur
+		var f := 180.0 + 520.0 * prog
+		var env := sin(PI * clampf(prog * 1.15, 0.0, 1.0))
+		var s := sin(TAU * f * t) * env * 0.24
+		s += sin(TAU * f * 1.5 * t) * env * 0.08
+		s += sin(TAU * 82.0 * t) * exp(-t * 9.0) * 0.3
+		out[i] = s
+	var peak := 0.0
+	for v in out:
+		peak = maxf(peak, absf(v))
+	if peak > 0.001:
+		for i in range(n):
+			out[i] *= 0.6 / peak
+	return _wav(out)
 
 func _collect_stream() -> AudioStream:
 	if FileAccess.file_exists("res://assets/audio/collect.wav"):

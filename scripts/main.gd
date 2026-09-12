@@ -102,6 +102,7 @@ func _on_combo_changed(count: int, mult: float):
 		_combo_label.add_theme_color_override("font_color", tc)
 		if tier != _last_combo_tier:
 			_last_combo_tier = tier
+			AudioManager.play_combo()
 			_show_combo_popup(mult, tc)
 
 func _show_combo_popup(mult: float, c: Color):
@@ -160,6 +161,7 @@ func _level_up():
 	level += 1
 	speed_mult = 1.0 + (level - 1) * LEVEL_SPEED_STEP
 	_update_level_label()
+	AudioManager.play_levelup()
 	_level_popup.text = "LEVEL %d COMPLETO\nSPEED %.1fx" % [level, speed_mult]
 	_level_popup.visible = true
 	var tw := create_tween()
