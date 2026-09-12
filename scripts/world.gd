@@ -91,8 +91,8 @@ func _ready():
 func _apply_theme():
 	match current_map:
 		"tokyo_neon":
-			_tint = Color(1.2, 1.05, 1.35)
-			_road_a = Color(0.6, 0.45, 0.8)
+			_tint = Color(0.6, 0.52, 0.7)
+			_road_a = Color(1.0, 1.0, 1.0)
 			_curb_a = Color(0.28, 0.1, 0.42)
 			_curb_e = Color(0.3, 0.95, 1.0)
 			_curb_en = 1.2
@@ -117,8 +117,8 @@ func _apply_theme():
 			_win_en = 1.6
 			_use_snow = false
 		"moscow_frost":
-			_tint = Color(1.3, 1.33, 1.65)
-			_road_a = Color(0.65, 0.72, 0.9)
+			_tint = Color(0.62, 0.68, 0.9)
+			_road_a = Color(1.0, 1.0, 1.0)
 			_curb_a = Color(0.2, 0.4, 0.6)
 			_curb_e = Color(0.5, 0.85, 1.0)
 			_curb_en = 1.2
@@ -143,7 +143,7 @@ func _apply_theme():
 			_win_en = 1.2
 			_use_snow = true
 		_:
-			_tint = Color(1.1, 1.15, 1.4)
+			_tint = Color(0.55, 0.6, 0.78)
 			_road_a = Color(0.85, 0.9, 1.0)
 			_curb_a = Color(0.0, 0.28, 0.4)
 			_curb_e = Color(0.0, 0.7, 1.0)
@@ -171,9 +171,18 @@ func _build_materials():
 	mat_road = StandardMaterial3D.new()
 	mat_road.albedo_texture = _road_texture()
 	mat_road.albedo_color = _road_a
-	mat_road.roughness = 0.45
-	mat_road.metallic = 0.15
-	mat_road.uv1_scale = Vector3(6.0, 1.0, 60.0)
+	if current_map == "tokyo_neon":
+		mat_road.roughness = 0.6
+		mat_road.metallic = 0.05
+		mat_road.uv1_scale = Vector3(8.0, 1.0, 88.0)
+	elif current_map == "moscow_frost":
+		mat_road.roughness = 0.7
+		mat_road.metallic = 0.1
+		mat_road.uv1_scale = Vector3(10.0, 1.0, 80.0)
+	else:
+		mat_road.roughness = 0.45
+		mat_road.metallic = 0.15
+		mat_road.uv1_scale = Vector3(6.0, 1.0, 60.0)
 
 	mat_curb = StandardMaterial3D.new()
 	mat_curb.albedo_color = _curb_a
@@ -206,6 +215,14 @@ func _build_materials():
 	mat_band.emission_energy_multiplier = _band_en
 
 func _road_texture() -> ImageTexture:
+	match current_map:
+		"tokyo_neon":
+			return _road_texture_bricks()
+		"moscow_frost":
+			return _road_texture_stone()
+	return _road_texture_asphalt()
+
+func _road_texture_asphalt() -> ImageTexture:
 	var img := Image.create(256, 256, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0.035, 0.04, 0.06))
 	for y in range(0, 256, 32):
@@ -222,6 +239,50 @@ func _road_texture() -> ImageTexture:
 		var y := rng.randi_range(4, 250)
 		var x0 := rng.randi_range(0, 220)
 		img.fill_rect(Rect2i(x0, y, rng.randi_range(14, 46), 1), Color(0.0, 0.18, 0.24, 0.5))
+	for y in range(256):
+		img.set_pixel(255, y, img.get_pixel(0, y))
+	return ImageTexture.create_from_image(img)
+
+func _road_texture_bricks() -> ImageTexture:
+	var img := Image.create(256, 256, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0.3, 0.28, 0.28))
+	for row in range(0, 256, 16):
+		var brick_h := 13
+		var step := 32
+		var shift := 16 if (row / 16) % 2 == 1 else 0
+		for bx in range(0, 256, step):
+			var x := bx + shift
+			var w := step - 2
+			if x + w > 256:
+				w = 256 - x
+			if w <= 0:
+				continue
+			var c := Color(0.8 + rng.randf() * 0.15, 0.78 + rng.randf() * 0.15, 0.83 + rng.randf() * 0.14)
+			img.fill_rect(Rect2i(x, row + 2, w, brick_h), c)
+			img.fill_rect(Rect2i(x, row + 2, w, 2), c.darkened(0.12))
+			img.fill_rect(Rect2i(x, row + brick_h - 1, w, 1), c.darkened(0.08))
+	return ImageTexture.create_from_image(img)
+
+func _road_texture_stone() -> ImageTexture:
+	var img := Image.create(256, 256, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0.03, 0.05, 0.09))
+	var cells := 8
+	var cell := 256 / cells
+	for cy in range(cells):
+		for cx in range(cells):
+			var inset := rng.randi_range(2, 5)
+			var x0 := cx * cell + inset
+			var y0 := cy * cell + rng.randi_range(0, 3)
+			var w := cell - inset - rng.randi_range(1, 4)
+			var h := cell - inset - rng.randi_range(1, 4)
+			y0 = clampi(y0, 0, 255 - h)
+			x0 = clampi(x0, 0, 255 - w)
+			var b: float = 0.05 + rng.randf() * 0.04
+			var c := Color(b, b * 1.4, b * 3.0 + 0.06)
+			img.fill_rect(Rect2i(x0, y0, w, h), c)
+			img.fill_rect(Rect2i(x0, y0, w, 2), c.lightened(0.35))
+			for i in range(14):
+				img.set_pixel(x0 + rng.randi_range(0, w - 1), y0 + rng.randi_range(0, h - 1), c.lightened(0.5))
 	for y in range(256):
 		img.set_pixel(255, y, img.get_pixel(0, y))
 	return ImageTexture.create_from_image(img)

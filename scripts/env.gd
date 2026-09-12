@@ -20,21 +20,21 @@ func _ready():
 	env.background_energy_multiplier = 1.0
 
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	env.ambient_light_energy = 1.5
+	env.ambient_light_energy = 1.05
 
-	env.fog_enabled = false
-	env.fog_light_color = Color(0.18, 0.08, 0.28)
-	env.fog_density = 0.004
-	env.fog_sky_affect = 0.5
+	env.fog_enabled = true
+	env.fog_light_color = Color(0.12, 0.05, 0.2)
+	env.fog_density = 0.006
+	env.fog_sky_affect = 0.45
 
 	env.glow_enabled = true
-	env.glow_intensity = 1.15
-	env.glow_strength = 1.4
-	env.glow_bloom = 0.12
-	env.glow_hdr_threshold = 0.9
+	env.glow_intensity = 0.9
+	env.glow_strength = 1.25
+	env.glow_bloom = 0.16
+	env.glow_hdr_threshold = 1.0
 
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-	env.tonemap_exposure = 1.2
+	env.tonemap_exposure = 0.8
 
 	environment = env
 	_sky_mat = sky_mat
@@ -49,25 +49,25 @@ func apply_theme(id: String):
 			_sky_mat.sky_horizon_color = Color(0.4, 0.1, 0.42)
 			_sky_mat.ground_horizon_color = Color(0.16, 0.04, 0.22)
 			_sky_mat.energy_multiplier = 1.0
-			_env.ambient_light_energy = 1.6
-			_env.glow_intensity = 1.15
-			_env.glow_strength = 1.4
-			_env.fog_light_color = Color(0.3, 0.06, 0.32)
+			_env.ambient_light_energy = 1.2
+			_env.glow_intensity = 0.95
+			_env.glow_strength = 1.25
+			_env.fog_light_color = Color(0.14, 0.03, 0.18)
 		"moscow_frost":
 			_sky_mat.sky_top_color = Color(0.01, 0.02, 0.06)
 			_sky_mat.sky_horizon_color = Color(0.5, 0.6, 0.8)
 			_sky_mat.ground_horizon_color = Color(0.2, 0.28, 0.42)
 			_sky_mat.energy_multiplier = 1.0
-			_env.ambient_light_energy = 1.6
-			_env.glow_intensity = 1.05
-			_env.glow_strength = 1.25
-			_env.fog_light_color = Color(0.32, 0.42, 0.6)
+			_env.ambient_light_energy = 1.25
+			_env.glow_intensity = 0.9
+			_env.glow_strength = 1.15
+			_env.fog_light_color = Color(0.1, 0.16, 0.32)
 		_:
 			_sky_mat.sky_top_color = Color(0.0, 0.01, 0.035)
 			_sky_mat.sky_horizon_color = Color(0.38, 0.12, 0.6)
 			_sky_mat.ground_horizon_color = Color(0.2, 0.06, 0.34)
 			_sky_mat.energy_multiplier = 0.9
-			_env.ambient_light_energy = 1.5
-			_env.glow_intensity = 1.15
-			_env.glow_strength = 1.4
-			_env.fog_light_color = Color(0.18, 0.08, 0.28)
+			_env.ambient_light_energy = 1.1
+			_env.glow_intensity = 0.9
+			_env.glow_strength = 1.25
+			_env.fog_light_color = Color(0.12, 0.05, 0.2)
