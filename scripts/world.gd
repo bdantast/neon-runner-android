@@ -41,6 +41,9 @@ const BUILD_COUNT := 42
 const DASH_SPACING := 5.0
 const DASH_COUNT := 18
 const SIDEWALK_X := 7.7
+const PEOPLE_COUNT := 30
+const PEOPLE_X_MIN := 9.3
+const PEOPLE_X_MAX := 11.5
 
 var mat_road: StandardMaterial3D
 var mat_curb: StandardMaterial3D
@@ -496,11 +499,17 @@ func _recycle_building(b: Node3D):
 	_install_building(b)
 
 func _build_people():
-	var men: bool = current_map != "moscow_frost"
-	for i in range(8):
-		var p: Node3D = _make_men_person() if men else _make_person(_people_palette[i % _people_palette.size()])
-		p.position = Vector3(SIDEWALK_X * (1.0 if i < 4 else -1.0), 0.15, randf_range(-45.0, 20.0))
-		p.rotation.y = rng.randf_range(-0.3, 0.3)
+	for i in range(PEOPLE_COUNT):
+		var side := 1.0 if i % 2 == 0 else -1.0
+		var p: Node3D = _make_men_person()
+		if p == null:
+			p = _make_person(_people_palette[i % _people_palette.size()])
+		p.position = Vector3(side * rng.randf_range(PEOPLE_X_MIN, PEOPLE_X_MAX), 0.15,
+			rng.randf_range(-58.0, 28.0))
+		p.rotation.y = rng.randf_range(-0.35, 0.35)
+		p.set_meta("_ph", rng.randf() * TAU)
+		p.set_meta("_rel", rng.randf_range(-0.45, 0.75))
+		p.set_meta("_by", p.rotation.y)
 		_people.append(p)
 		add_child(p)
 
@@ -515,12 +524,14 @@ func _make_men_person() -> Node3D:
 	var inst: Node3D = ps.instantiate()
 	p.add_child(inst)
 	Neon.fit_local(inst, 2.5)
+	if current_map == "moscow_frost":
+		Neon.tint_dark(inst, Color(0.78, 0.85, 1.12))
 	inst.rotation.y = rng.randf() * TAU
 	for ap in inst.find_children("*", "AnimationPlayer", true, false):
 		var apn := ap as AnimationPlayer
 		if apn.has_animation("CharacterArmature|Run"):
 			apn.get_animation("CharacterArmature|Run").loop_mode = Animation.LOOP_LINEAR
-			apn.speed_scale = rng.randf_range(0.85, 1.15)
+			apn.speed_scale = rng.randf_range(0.95, 1.35)
 			apn.play("CharacterArmature|Run")
 	return p
 
@@ -537,12 +548,16 @@ func _make_person(co: Color) -> Node3D:
 	_box(p, Vector3(0.16, 0.16, 0.16), skin, Vector3(0, 1.02, 0))
 	_box(p, Vector3(0.22, 0.05, 0.16), hair, Vector3(0, 1.16, -0.01))
 	_box(p, Vector3(0.27, 0.12, 0.03), _make_mat(Color(0.35, 0.6, 1.0), Color(0.2, 0.5, 1.0), 1.6), Vector3(0, 0.98, 0.08))
+	var arms: Array[Node3D] = []
 	for side in [-1.0, 1.0]:
 		var arm := Node3D.new()
 		arm.position = Vector3(0.17 * side, 0.9, 0)
 		_box(arm, Vector3(0.05, 0.3, 0.055), jacket_mat, Vector3(0, -0.15, 0))
 		_box(arm, Vector3(0.04, 0.1, 0.05), skin, Vector3(0, -0.34, 0))
 		p.add_child(arm)
+		arms.append(arm)
+	if arms.size() >= 2:
+		p.set_meta("_arms", arms)
 	return p
 
 func _vehicle_path() -> String:
@@ -698,10 +713,24 @@ func _process(delta):
 			_recycle_building(b)
 
 	for p in _people:
-		p.position.z += dz * 1.0
-		p.rotation.y = sin(Time.get_ticks_msec() * 0.001 + p.position.x) * 0.04
-		if p.position.z > 45.0:
-			p.position.z -= BUILD_SPAN + 30.0
+		var rel: float = p.get_meta("_rel")
+		var ph: float = p.get_meta("_ph")
+		var by: float = p.get_meta("_by")
+		var t: float = Time.get_ticks_msec() * 0.001
+		p.position.z += dz * (1.0 + rel)
+		p.position.y = 0.15 + sin(t * 11.0 + ph) * 0.06
+		p.rotation.x = lerpf(p.rotation.x, 0.12 + maxf(rel, 0.0) * 0.25, delta * 6.0)
+		p.rotation.y = by + sin(t * 8.5 + ph) * 0.14
+		if p.position.z > 42.0:
+			p.position.z = randf_range(-55.0, -28.0)
+		elif p.position.z < -28.0:
+			p.position.z = randf_range(18.0, 36.0)
+		if p.has_meta("_arms"):
+			var arms: Array = p.get_meta("_arms")
+			if arms.size() == 2:
+				var swing := sin(t * 11.0 + ph) * 0.7
+				(arms[0] as Node3D).rotation.x = swing
+				(arms[1] as Node3D).rotation.x = -swing
 
 	for c in _cars:
 		c.position.z += dz * 1.25
